@@ -1,0 +1,50 @@
+/* Styles specific to blog posts */
+
+/* Add scroll margin to headings to account for the fixed header */
+article h1,
+article h2,
+article h3,
+article h4,
+article h5,
+article h6 {
+    scroll-margin-top: 100px; /* Fixed value that accommodates your header height with padding */
+    position: relative;
+}
+
+/* Optional: Add a small hover indicator for headings with IDs */
+article h2:hover::before,
+article h3:hover::before,
+article h4:hover::before,
+article h5:hover::before,
+article h6:hover::before {
+    content: "#";
+    position: absolute;
+    left: -1em;
+    color: #689bf7;
+    opacity: 0.8;
+}
+
+/* Make sure anchor links use smooth scrolling */
+html {
+    scroll-behavior: smooth;
+}
+
+/* Dark mode prose overrides - using [data-theme="dark"] instead of Tailwind's .dark class */
+[data-theme="dark"] .prose {
+    --tw-prose-body: var(--color-text-primary);
+    --tw-prose-headings: var(--color-text-primary);
+    --tw-prose-lead: var(--color-text-secondary);
+    --tw-prose-links: var(--color-blue);
+    --tw-prose-bold: var(--color-text-primary);
+    --tw-prose-counters: var(--color-text-muted);
+    --tw-prose-bullets: var(--color-text-muted);
+    --tw-prose-hr: var(--color-border);
+    --tw-prose-quotes: var(--color-text-secondary);
+    --tw-prose-quote-borders: var(--color-border);
+    --tw-prose-captions: var(--color-text-muted);
+    --tw-prose-code: var(--color-text-primary);
+    --tw-prose-pre-code: var(--color-text-primary);
+    --tw-prose-pre-bg: var(--color-surface);
+    --tw-prose-th-borders: var(--color-border);
+    --tw-prose-td-borders: var(--color-border);
+}

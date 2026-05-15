@@ -1,0 +1,542 @@
+---
+import Layout from "@layouts/Layout.astro";
+import { Icon } from "astro-icon/components";
+import { fetchNotes, getCategories, type Note } from "@api/github-notes";
+import { colors } from "@components/garden/utils/colors";
+import { marked } from "marked";
+import Divider from "@components/Divider.astro";
+
+export async function getStaticPaths() {
+    const notesData = await fetchNotes();
+    const categories = getCategories(notesData);
+
+    // Build category info sorted by count for consistent color assignment
+    const categoryInfoList = categories
+        .map((cat) => ({
+            name: cat,
+            count: (notesData[cat] as Note[])?.length || 0,
+        }))
+        .sort((a, b) => b.count - a.count);
+
+    // Create category to index map
+    const categoryIndexMap: Record<string, number> = {};
+    categoryInfoList.forEach((cat, index) => {
+        categoryIndexMap[cat.name] = index;
+    });
+
+    const paths: {
+        params: { category: string; slug: string };
+        props: {
+            note: Note;
+            htmlContent: string;
+            categoryIndex: number;
+            previousNote: Note | null;
+            nextNote: Note | null;
+            footnotes: { id: string; content: string }[];
+        };
+    }[] = [];
+
+    for (const category of categories) {
+        const notes = notesData[category] as Note[];
+        // Sort notes by created date for consistent ordering
+        const sortedNotes = [...notes].sort(
+            (a, b) =>
+                new Date(b.created).getTime() - new Date(a.created).getTime(),
+        );
+
+        for (let i = 0; i < sortedNotes.length; i++) {
+            const note = sortedNotes[i];
+
+            // Extract footnotes from content
+            const footnoteRegex = /\[\^(\d+)\]:\s(.+)/g;
+            const footnotes: { id: string; content: string }[] = [];
+            let contentWithoutFootnotes = (note.content || "").replace(
+                footnoteRegex,
+                (_match: string, id: string, content: string) => {
+                    footnotes.push({ id, content });
+                    return "";
+                },
+            );
+
+            // Remove indentation from HTML blocks to prevent them from being treated as code blocks
+            // This handles both <div> and other HTML elements that might be indented in Obsidian notes
+            contentWithoutFootnotes = contentWithoutFootnotes.replace(
+                /^[ \t]+(<[^>]+>)/gm,
+                "$1",
+            );
+
+            // Configure marked to handle HTML properly
+            marked.setOptions({
+                gfm: true, // GitHub Flavored Markdown
+                breaks: false, // Don't convert \n to <br>
+            });
+
+            // Parse markdown content to HTML
+            const htmlContent = await marked.parse(contentWithoutFootnotes);
+
+            // Find previous and next notes
+            const previousNote = i > 0 ? sortedNotes[i - 1] : null;
+            const nextNote =
+                i < sortedNotes.length - 1 ? sortedNotes[i + 1] : null;
+
+            paths.push({
+                params: {
+                    category: category.toLowerCase(),
+                    slug: note.slug,
+                },
+                props: {
+                    note,
+                    htmlContent,
+                    categoryIndex: categoryIndexMap[category],
+                    previousNote,
+                    nextNote,
+                    footnotes,
+                },
+            });
+        }
+    }
+
+    return paths;
+}
+
+const { note, htmlContent, categoryIndex, previousNote, nextNote, footnotes } =
+    Astro.props;
+
+// Get background color based on category
+const bgColor = colors[categoryIndex % colors.length];
+
+// Format date (DD / MM / YYYY)
+const formatDate = (dateString: string) => {
+    const date = new Date(dateString);
+    const day = String(date.getDate()).padStart(2, "0");
+    const month = String(date.getMonth() + 1).padStart(2, "0");
+    const year = date.getFullYear();
+    return `${day} / ${month} / ${year}`;
+};
+
+// Only show edited if it exists and differs from created
+const showEdited =
+    note.edited && formatDate(note.created) !== formatDate(note.edited);
+---
+
+<Layout hasHeader={false} ogImage="/opengraph/garden.jpg">
+    <!-- SVG distortion filter -->
+    <svg class="hidden" aria-hidden="true">
+        <defs>
+            <filter id="distort-xl">
+                <feTurbulence baseFrequency="1 1" numOctaves="1"></feTurbulence>
+                <feDisplacementMap in="SourceGraphic" scale="1.3"
+                ></feDisplacementMap>
+            </filter>
+        </defs>
+    </svg>
+
+    <a
+        href="/garden"
+        transition:name="garden-close-button"
+        class="close-button fixed top-4 right-4 z-50 rounded-full h-12 w-12 flex-center cursor-pointer transition-colors no-underline"
+    >
+        <Icon name="ph:x-bold" size={24} />
+    </a>
+    <article
+        transition:name="garden-card"
+        class="effect relative w-full max-w-5xl lg:my-12 z-30 mx-auto"
+        data-prev-note={previousNote
+            ? `/garden/${note.thema.toLowerCase()}/${previousNote.slug}`
+            : undefined}
+        data-next-note={nextNote
+            ? `/garden/${note.thema.toLowerCase()}/${nextNote.slug}`
+            : undefined}
+    >
+        <!-- Main card with background color -->
+        <div
+            class="relative w-full p-2 md:p-4 text-black"
+            style={`background-color: ${bgColor}`}
+        >
+            <div class="texture"></div>
+
+            <!-- Content border -->
+            <div
+                class="border border-black/60 px-4 pb-24 pt-4 md:px-10 md:pt-6"
+            >
+                <div class="mx-auto mt-20 max-w-[65ch] text-[1.2rem]">
+                    <h1
+                        class="font-sans text-[3rem] font-black leading-[1.15] md:text-[4.5rem]"
+                    >
+                        {note.title}
+                    </h1>
+                    <Divider isBlack />
+                </div>
+
+                <!-- Markdown content -->
+                <div class="markdown prose">
+                    <Fragment set:html={htmlContent} />
+                </div>
+            </div>
+
+            <!-- Metadata footer -->
+            <div class="border-b border-l border-r border-black/60">
+                <div class="flex">
+                    <span
+                        class:list={[
+                            "flex flex-col items-center gap-2 border-r border-black/60 p-3 md:flex-row",
+                            showEdited ? "w-1/3" : "w-1/2",
+                        ]}
+                    >
+                        <span>创建于:</span>
+                        <span
+                            class="font-decorative text-[20px] sm:text-[24px]"
+                            style="filter: url(#distort-xl);"
+                        >
+                            {formatDate(note.created)}
+                        </span>
+                    </span>
+                    {
+                        showEdited && (
+                            <span class="flex w-1/3 flex-col items-center gap-2 border-r border-black/60 p-3 md:flex-row">
+                                <span>编辑于:</span>
+                                <span
+                                    class="font-decorative text-[20px] sm:text-[24px]"
+                                    style="filter: url(#distort-xl);"
+                                >
+                                    {formatDate(note.edited)}
+                                </span>
+                            </span>
+                        )
+                    }
+                    <div
+                        class:list={[
+                            "flex flex-col items-center gap-2 p-3 md:flex-row",
+                            showEdited ? "w-1/3" : "w-1/2",
+                        ]}
+                    >
+                        <span>主题:</span>
+                        <span
+                            class="font-decorative text-[20px] sm:text-[24px]"
+                            style="filter: url(#distort-xl);"
+                        >
+                            {note.thema}
+                        </span>
+                    </div>
+                </div>
+                {
+                    footnotes.length > 0 && (
+                        <div class="flex flex-col border-t border-black/60 px-3 py-6 md:flex-row">
+                            <div class="mb-2 w-1/3">脚注:</div>
+                            <ul class="text-xs md:w-2/3">
+                                {footnotes.map((fn) => (
+                                    <li
+                                        class="flex gap-2"
+                                        id={`footnote-${fn.id}`}
+                                    >
+                                        <span class="font-decorative text-sm">
+                                            {fn.id}
+                                        </span>
+                                        <a href={fn.content}>{fn.content}</a>
+                                    </li>
+                                ))}
+                            </ul>
+                        </div>
+                    )
+                }
+                {
+                    (previousNote || nextNote) && (
+                        <div class="flex border-t border-black/60">
+                            {previousNote && (
+                                <a
+                                    href={`/garden/${note.thema.toLowerCase()}/${previousNote.slug}`}
+                                    data-astro-reload
+                                    class={`${nextNote ? "w-1/2 border-r border-black/60" : "w-full"} cursor-pointer px-3 py-9 text-center hover:bg-black/5 transition-colors`}
+                                >
+                                    ← Previous note
+                                </a>
+                            )}
+                            {nextNote && (
+                                <a
+                                    href={`/garden/${note.thema.toLowerCase()}/${nextNote.slug}`}
+                                    data-astro-reload
+                                    class={`${previousNote ? "w-1/2" : "w-full"} cursor-pointer px-3 py-9 text-center hover:bg-black/5 transition-colors`}
+                                >
+                                    Next note →
+                                </a>
+                            )}
+                        </div>
+                    )
+                }
+            </div>
+        </div>
+    </article>
+</Layout>
+
+<style>
+    .texture {
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        mix-blend-mode: soft-light;
+        background: url("data:image/svg+xml,%3Csvg viewBox='0 0 369 369' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='1.5' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E");
+        pointer-events: none;
+    }
+
+    .effect {
+        position: relative;
+    }
+
+    .effect:after {
+        z-index: -1;
+        position: absolute;
+        content: "";
+        width: 50%;
+        top: 80%;
+        box-shadow: 0 1em 0.5em rgba(0, 0, 0, 0.1);
+        transform: rotate(3deg);
+        bottom: 16px;
+        right: 0.5em;
+    }
+
+    /* Markdown prose styling */
+    .markdown {
+        --tw-prose-body: rgba(0, 0, 0, 0.9);
+        --tw-prose-headings: rgba(0, 0, 0, 0.9);
+        --tw-prose-counters: rgba(0, 0, 0, 0.4);
+        --tw-prose-bullets: rgba(0, 0, 0, 0.3);
+        --tw-prose-bold: rgba(0, 0, 0, 1);
+        --tw-prose-links: rgba(0, 0, 0, 0.7);
+        --tw-prose-quote-borders: rgba(0, 0, 0, 0.2);
+        --tw-prose-td-borders: rgba(0, 0, 0, 0.1);
+        --tw-prose-th-borders: rgba(0, 0, 0, 0.3);
+        max-width: 65ch;
+        margin: 0 auto;
+        font-size: 1.2rem;
+    }
+
+    .markdown :global(hr) {
+        display: block;
+        margin: 3rem 0;
+        border: none;
+    }
+
+    .markdown :global(hr)::after {
+        content: "------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------";
+        display: block;
+        color: rgba(0, 0, 0, 0.5);
+        position: absolute;
+        margin: 0 32px;
+        left: 0;
+        right: 0;
+        font-family: "Fira Mono", monospace;
+        letter-spacing: 0.1em;
+        font-size: 1.125rem;
+        line-height: 1.5;
+        text-overflow: clip;
+        overflow: hidden;
+        white-space: nowrap;
+    }
+
+    .markdown :global(img) {
+        filter: grayscale(100%) contrast(110%) brightness(110%);
+        mix-blend-mode: multiply;
+    }
+
+    .markdown :global(img:hover) {
+        filter: grayscale(0%) contrast(100%) brightness(100%);
+        mix-blend-mode: normal;
+    }
+
+    /* Hide images in paragraphs by default */
+    .markdown :global(p) :global(img) {
+        width: 100%;
+        min-width: 0;
+        margin: 0;
+        display: none;
+    }
+
+    /* Image gallery - flex row layout for paragraphs with only images */
+    .markdown :global(.image-gallery) {
+        display: flex;
+        gap: 16px;
+    }
+
+    .markdown :global(.image-gallery) :global(img) {
+        display: block;
+    }
+
+    .markdown :global(a) {
+        text-decoration: none;
+        border-bottom: 1px dashed rgba(0, 0, 0, 0.3);
+        padding-bottom: 3px;
+        position: relative;
+        margin-right: 20px;
+        font-style: italic;
+    }
+
+    .markdown :global(a)::after {
+        content: "↗";
+        position: absolute;
+        font-style: normal;
+        top: 0;
+        line-height: 1.2em;
+        right: -18px;
+        font-size: 1.2em;
+        color: rgba(0, 0, 0, 0.4);
+    }
+
+    .markdown :global(input[type="checkbox"]) {
+        appearance: none;
+        width: 1.5em;
+        height: 1.5em;
+        border: 1px solid rgba(0, 0, 0, 0.3);
+        border-radius: 0.25em;
+        margin-right: 0.5em;
+        vertical-align: middle;
+        position: relative;
+        top: -0.1em;
+    }
+
+    .markdown :global(input[type="checkbox"]:checked)::after {
+        content: "✓";
+        display: block;
+        position: absolute;
+        top: 0.05em;
+        left: 0.15em;
+        font-size: 1.2em;
+        line-height: 1em;
+        color: rgba(0, 0, 0, 0.7);
+    }
+
+    .markdown :global(ul:has(> li > input[type="checkbox"])) {
+        list-style-type: none;
+        padding: 0;
+        margin: 0;
+    }
+
+    .markdown :global(ul:has(> li > input[type="checkbox"]) li) {
+        display: flex;
+        font-size: 0.9em;
+        line-height: 1.4em;
+        margin-bottom: 16px;
+    }
+
+    .markdown :global(.footnotes) {
+        display: none;
+    }
+
+    .markdown :global(sup > a) {
+        border: none;
+        margin-right: 0px;
+    }
+
+    .markdown :global(sup > a)::after {
+        display: none;
+    }
+
+    /* Columns layout for side-by-side content */
+    .markdown :global(.columns) {
+        display: grid;
+        grid-template-columns: 1fr;
+        gap: 32px;
+    }
+
+    .markdown :global(.columns) :global(img) {
+        max-width: 120px;
+        margin: 0;
+        margin-top: 8px;
+        display: block;
+    }
+
+    .markdown :global(.columns) :global(p),
+    .markdown :global(.columns) :global(ul) {
+        margin: 0;
+    }
+
+    .markdown :global(.columns.vertically-centered) {
+        align-items: center;
+    }
+
+    @media (min-width: 640px) {
+        .markdown :global(.columns) {
+            grid-template-columns: var(--column-widths, 1fr 1fr);
+            gap: 64px;
+        }
+        .markdown :global(.columns) :global(img) {
+            max-width: 100%;
+        }
+    }
+</style>
+
+<script>
+    function initImageGallery() {
+        const markdownDiv = document.querySelector(".markdown");
+        const paragraphs = markdownDiv?.querySelectorAll("p");
+
+        paragraphs?.forEach((p) => {
+            const images = p.querySelectorAll("img");
+            const elementNodes = Array.from(p.childNodes).filter(
+                (node) => node.nodeType === Node.ELEMENT_NODE,
+            );
+            if (images.length > 0 && images.length === elementNodes.length) {
+                p.classList.add("image-gallery");
+            }
+        });
+    }
+
+    // Run on initial load
+    document.addEventListener("DOMContentLoaded", initImageGallery);
+    // Run after View Transitions
+    document.addEventListener("astro:page-load", initImageGallery);
+
+    // Keyboard navigation for prev/next notes
+    function handleKeyboardNavigation(e: KeyboardEvent) {
+        // Don't trigger if user is typing in an input
+        if (
+            e.target instanceof HTMLInputElement ||
+            e.target instanceof HTMLTextAreaElement
+        ) {
+            return;
+        }
+
+        const article = document.querySelector(
+            "article[data-prev-note], article[data-next-note]",
+        );
+        if (!article) return;
+
+        const prevUrl = article.getAttribute("data-prev-note");
+        const nextUrl = article.getAttribute("data-next-note");
+
+        if (e.key === "ArrowLeft" && prevUrl) {
+            window.location.href = prevUrl;
+        } else if (e.key === "ArrowRight" && nextUrl) {
+            window.location.href = nextUrl;
+        }
+    }
+
+    document.addEventListener("keydown", handleKeyboardNavigation);
+
+    // Calculate precise slide distance based on element position
+    document.addEventListener("astro:before-preparation", (e) => {
+        const isNavigatingToGarden =
+            e.newDocument?.URL.includes("/garden") &&
+            !e.newDocument?.URL.match(/\/garden\/[^/]+\/[^/]+$/);
+
+        if (isNavigatingToGarden) {
+            const article = document.querySelector(
+                'article[transition\\:name="garden-card"]',
+            );
+            if (article) {
+                const rect = article.getBoundingClientRect();
+                // Calculate distance to slide element's top edge below viewport bottom
+                // rect.top can be negative if element is scrolled above viewport
+                // window.innerHeight is the viewport height (bottom edge position)
+                // Translation needed: viewport bottom - current top position
+                const slideDistance = window.innerHeight - rect.top;
+
+                document.documentElement.style.setProperty(
+                    "--slide-distance",
+                    `${slideDistance}px`,
+                );
+            }
+        }
+    });
+</script>

@@ -1,0 +1,40 @@
+---
+import Container from "@components/Container.astro";
+import { fetchBookmarks } from "@api/obsidian-bookmarks";
+import BookmarkItem from "./BookmarkItem.astro";
+
+const bookmarks = await fetchBookmarks();
+const firstTenBookmarks = bookmarks.slice(0, 10);
+---
+
+<Container>
+    <ul>
+        {
+            firstTenBookmarks.map((bookmark) => (
+                <BookmarkItem bookmark={bookmark} />
+            ))
+        }
+    </ul>
+    <ul
+        class="flex align-center justify-end gap-3 mt-4 col-span-full sm:col-span-full text-sm"
+    >
+        <li>
+            <span class="mr-1 inline-block h-2 w-2 rounded-full bg-green"
+            ></span>文章
+        </li>
+        <li>
+            <span class="mr-1 inline-block h-2 w-2 rounded-full bg-lilac"
+            ></span>网站
+        </li>
+        <li>
+            <span class="mr-1 inline-block h-2 w-2 rounded-full bg-blue"
+            ></span>视频
+        </li>
+        <li>
+            <span class="mr-1 inline-block h-2 w-2 rounded-full bg-red"
+            ></span>其他
+        </li>
+    </ul>
+</Container>
+
+<script src="../../scripts/listItemImageHoverEffect.ts"></script>

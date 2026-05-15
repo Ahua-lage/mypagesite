@@ -1,0 +1,65 @@
+---
+import Layout from "@layouts/Layout.astro";
+import Container from "@components/Container.astro";
+import Grid from "@components/Grid.astro";
+import GridItem from "@components/GridItem.astro";
+import HeadlineParagraphSection from "@components/HeadlineParagraphSection.astro";
+import Contact from "@components/Contact.astro";
+import SkillCard from "@components/about/SkillCard.astro";
+
+const skills = [
+    {
+        title: "网页开发",
+        description:
+            "使用现代技术构建快速、可访问的 Web 应用",
+        icon: "ph:browser-bold",
+    },
+    {
+        title: "用户体验/界面设计",
+        description:
+            "设计直观的界面和流畅的用户体验",
+        icon: "ph:cursor-click-bold",
+    },
+    {
+        title: "设计系统",
+        description: "创建可扩展的组件库和设计令牌",
+        icon: "ph:stack-bold",
+    },
+    {
+        title: "摄影",
+        description: "通过镜头捕捉瞬间、讲述故事",
+        icon: "ph:camera-bold",
+    },
+    {
+        title: "创意编程",
+        description:
+            "探索代码、设计与生成艺术的交汇点",
+        icon: "ph:sparkle-bold",
+    },
+];
+---
+
+<Layout>
+    <Container>
+        <Grid class="py-40">
+            <GridItem colSpan={12}>
+                <HeadlineParagraphSection title="关于">
+                    我是钟长华，一名常驻中国的设计工程师。我热爱构建那些位于代码、设计与艺术交汇点的事物。当我不在处理像素或编写代码时，你会发现我在拍照、阅读或探索新的地方。
+                </HeadlineParagraphSection>
+            </GridItem>
+        </Grid>
+
+        <Grid class="pb-24">
+            <GridItem colSpan={12}>
+                <h3 class="text-xl font-bold mb-8">技能</h3>
+            </GridItem>
+            <GridItem colSpan={12}>
+                <div
+                    class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4"
+                >
+                    {skills.map((skill) => <SkillCard {...skill} />)}
+                </div>
+            </GridItem>
+        </Grid>
+    </Container>
+</Layout>

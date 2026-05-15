@@ -1,0 +1,126 @@
+---
+import { Icon } from "astro-icon/components";
+
+const rssFeeds = [
+    { label: "博客", url: "/blog-rss.xml" },
+    { label: "书签", url: "/bookmarks-rss.xml" },
+];
+---
+
+<details id="rss-dropdown" class="relative">
+    <summary
+        class="p-2 cursor-pointer list-none hover:text-neutral-500 transition-colors"
+        aria-label="RSS 订阅"
+        title="订阅 RSS"
+    >
+        <Icon name="ph:rss-simple-bold" size={18} />
+    </summary>
+
+    <div
+        class="absolute right-0 mt-2 w-64 z-50 bg-surface rounded-xl shadow-lg border border-border p-2"
+    >
+        <div class="px-3 py-2 border-b border-border mb-1">
+            <h3 class="text-xs uppercase tracking-wide text-muted font-mono">
+                RSS 订阅
+            </h3>
+        </div>
+        {
+            rssFeeds.map((feed) => (
+                <div class="flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-surface-raised transition-colors">
+                    <Icon
+                        name="ph:rss-simple-bold"
+                        size={16}
+                        class="shrink-0 text-muted"
+                    />
+                    <span class="text-sm flex-1">{feed.label}</span>
+                    <button
+                        class="rss-copy-btn p-1.5 rounded-lg hover:bg-background transition-colors"
+                        data-url={feed.url}
+                        title="复制订阅链接"
+                        aria-label={`复制 ${feed.label} RSS 订阅链接`}
+                    >
+                        <Icon name="ph:copy-bold" size={14} class="copy-icon" />
+                        <Icon
+                            name="ph:check-bold"
+                            size={14}
+                            class="check-icon hidden text-green-dark"
+                        />
+                    </button>
+                    <a
+                        href={feed.url}
+                        class="p-1.5 rounded-lg hover:bg-background transition-colors"
+                        title="打开订阅"
+                        aria-label={`打开 ${feed.label} RSS 订阅`}
+                    >
+                        <Icon name="ph:arrow-square-out-bold" size={14} />
+                    </a>
+                </div>
+            ))
+        }
+    </div>
+</details>
+
+<style>
+    summary::marker,
+    summary::-webkit-details-marker {
+        display: none;
+    }
+</style>
+
+<script>
+    function initRssDropdown() {
+        const dropdown = document.getElementById(
+            "rss-dropdown",
+        ) as HTMLDetailsElement;
+        if (!dropdown) return;
+
+        if (dropdown.dataset.initialized) return;
+        dropdown.dataset.initialized = "true";
+
+        // Close when clicking outside
+        document.addEventListener("click", (e) => {
+            if (!dropdown.contains(e.target as Node)) {
+                dropdown.open = false;
+            }
+        });
+
+        // Copy to clipboard functionality (targets all rss-copy-btn on the page)
+        const copyButtons = document.querySelectorAll(".rss-copy-btn");
+        copyButtons.forEach((button) => {
+            button.addEventListener("click", async (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+
+                const url = button.getAttribute("data-url");
+                if (!url) return;
+
+                const fullUrl = `${window.location.origin}${url}`;
+
+                try {
+                    await navigator.clipboard.writeText(fullUrl);
+
+                    const copyIcon = button.querySelector(".copy-icon");
+                    const checkIcon = button.querySelector(".check-icon");
+
+                    copyIcon?.classList.add("hidden");
+                    checkIcon?.classList.remove("hidden");
+
+                    button.classList.add("bg-green-light");
+
+                    setTimeout(() => {
+                        copyIcon?.classList.remove("hidden");
+                        checkIcon?.classList.add("hidden");
+                        button.classList.remove("bg-green-light");
+                    }, 2000);
+                } catch (err) {
+                    console.error("Failed to copy:", err);
+                }
+            });
+        });
+    }
+
+    document.addEventListener("astro:page-load", initRssDropdown);
+    if (document.readyState !== "loading") {
+        initRssDropdown();
+    }
+</script>

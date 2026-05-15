@@ -1,0 +1,163 @@
+---
+import Layout from "@layouts/Layout.astro";
+import HeadlineParagraphSection from "@components/HeadlineParagraphSection.astro";
+import Container from "@components/Container.astro";
+import BooksFilter from "./BooksFilter.astro";
+import BooksCarousel from "./BooksCarousel.astro";
+import BooksSpineCarousel from "./BooksSpineCarousel.astro";
+import type { Book, BooksData } from "@api/github-books";
+import { buildGardenNoteMap } from "@utils/gardenNotes";
+
+interface Props {
+    booksData: BooksData;
+    selectedYear?: string;
+}
+
+const { booksData, selectedYear } = Astro.props;
+
+// Fetch garden notes and build a map of book title -> garden note slug
+const allBooksFlat = [
+    ...booksData.aktiv,
+    ...booksData.merkliste,
+    ...Object.values(booksData.abgeschlossen).flat(),
+];
+const gardenNoteMapRaw = await buildGardenNoteMap(
+    "Books",
+    allBooksFlat.map((b) => b.title),
+);
+// Convert to simple string map for backwards compatibility with book components
+const gardenNoteMap = new Map<string, string>();
+for (const [title, match] of gardenNoteMapRaw) {
+    gardenNoteMap.set(title, match.slug);
+}
+
+const { aktiv, merkliste, abgeschlossen } = booksData;
+
+// Get current year
+const currentYear = new Date().getFullYear().toString();
+
+// Get years from abgeschlossen and add current year if it has aktiv books
+const abgeschlossenYears = Object.keys(abgeschlossen);
+const hasCurrentYearBooks = abgeschlossenYears.includes(currentYear);
+const years =
+    hasCurrentYearBooks || aktiv.length === 0
+        ? abgeschlossenYears.sort((a, b) => Number(b) - Number(a))
+        : [currentYear, ...abgeschlossenYears].sort(
+              (a, b) => Number(b) - Number(a),
+          );
+
+// Default to current year if no selection
+const activeYear = selectedYear || currentYear;
+
+// Sort books within each year by finished date (newest first)
+const sortBooksByDate = (books: Book[]) => {
+    return [...books].sort((a, b) => {
+        const dateA = a.finished ? new Date(a.finished).getTime() : 0;
+        const dateB = b.finished ? new Date(b.finished).getTime() : 0;
+        return dateB - dateA;
+    });
+};
+
+// Build book counts for filter
+const bookCounts: Record<string, number> = {};
+years.forEach((year) => {
+    const completedCount = abgeschlossen[year]?.length || 0;
+    const aktivCount = year === currentYear ? aktiv.length : 0;
+    bookCounts[year] = completedCount + aktivCount;
+});
+bookCounts["want-to-read"] = merkliste.length;
+
+// Determine what to display
+const isWantToRead = activeYear === "want-to-read";
+const isCurrentYear = activeYear === currentYear;
+
+// Helper to check if a book is a graphic novel
+const isGraphicNovel = (book: Book) => {
+    return (
+        book.genre?.some((g) => g.toLowerCase().includes("graphic novel")) ??
+        false
+    );
+};
+
+// Helper to check if a book is a regular book (not graphic novel)
+const isRegularBook = (book: Book) => !isGraphicNovel(book);
+
+// Split books into categories for the active year
+const yearBooks = abgeschlossen[activeYear] || [];
+const regularBooks = yearBooks.filter(isRegularBook);
+const graphicNovels = yearBooks.filter(isGraphicNovel);
+
+// Also split aktiv books if current year
+const aktivRegular = aktiv.filter(isRegularBook);
+const aktivGraphicNovels = aktiv.filter(isGraphicNovel);
+
+// Split merkliste for want-to-read view
+const merklisteRegular = merkliste.filter(isRegularBook);
+const merklisteGraphicNovels = merkliste.filter(isGraphicNovel);
+---
+
+<Layout ogImage="/opengraph/books.jpg">
+    <HeadlineParagraphSection title="书籍" isFirstElement>
+        我在 Obsidian 中记录阅读的书籍，在那里记录和整理我读完的所有内容。为了让这个收藏更容易浏览，数据会自动更新并显示在我的网站上。它作为个人档案，也让我可以回顾一段时间以来的阅读记录。
+    </HeadlineParagraphSection>
+    <Container class="mb-16">
+        <BooksFilter
+            years={years}
+            selectedYear={activeYear}
+            hasMerkliste={merkliste.length > 0}
+            bookCounts={bookCounts}
+        />
+    </Container>
+
+    <div class="flex flex-col gap-8">
+        {
+            !isWantToRead &&
+                (regularBooks.length > 0 ||
+                    (isCurrentYear && aktivRegular.length > 0)) && (
+                    <BooksCarousel
+                        title="书籍"
+                        books={sortBooksByDate(regularBooks)}
+                        currentlyReadingBooks={
+                            isCurrentYear ? aktivRegular : []
+                        }
+                        gardenNoteMap={gardenNoteMap}
+                    />
+                )
+        }
+        {
+            !isWantToRead &&
+                (graphicNovels.length > 0 ||
+                    (isCurrentYear && aktivGraphicNovels.length > 0)) && (
+                    <BooksCarousel
+                        title="图像小说"
+                        books={sortBooksByDate(graphicNovels)}
+                        currentlyReadingBooks={
+                            isCurrentYear ? aktivGraphicNovels : []
+                        }
+                        gardenNoteMap={gardenNoteMap}
+                    />
+                )
+        }
+        {
+            isWantToRead && merklisteRegular.length > 0 && (
+                <BooksCarousel title="想读" books={merklisteRegular} gardenNoteMap={gardenNoteMap} />
+            )
+        }
+        {
+            isWantToRead && merklisteGraphicNovels.length > 0 && (
+                <BooksCarousel
+                    title="图像小说"
+                    books={merklisteGraphicNovels}
+                    gardenNoteMap={gardenNoteMap}
+                />
+            )
+        }
+    </div>
+    {
+        !isWantToRead && (
+            <div class="my-24">
+                <BooksSpineCarousel abgeschlossen={abgeschlossen} />
+            </div>
+        )
+    }
+</Layout>

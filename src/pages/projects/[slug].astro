@@ -1,0 +1,88 @@
+---
+import { getCollection } from "astro:content";
+import Layout from "@layouts/Layout.astro";
+import { Icon } from "astro-icon/components";
+import Prose from "@components/Prose.astro";
+
+export async function getStaticPaths() {
+    const projects = await getCollection("projects");
+    return projects.map((project) => ({
+        params: { slug: project.slug },
+        props: { project },
+    }));
+}
+
+const { project } = Astro.props;
+const { Content } = await project.render();
+---
+
+<Layout hasHeader={false}>
+    <a
+        href="/"
+        transition:name="project-close-button"
+        class="close-button fixed top-4 right-4 z-50 rounded-full h-12 w-12 flex-center cursor-pointer transition-colors no-underline"
+    >
+        <Icon name="ph:x-bold" size={24} />
+    </a>
+    <article
+        transition:name="project-card"
+        class="w-full max-w-5xl relative rounded-4xl my-12 z-30 mx-auto shadow-[0px_20px_40px_rgba(0,0,0,.025)] py-24 px-16"
+        style={`background-color: ${project.data.bgColor}`}
+    >
+        <header class="">
+            <h1 class="text-3xl md:text-4xl font-bold mb-2 text-white">
+                {project.data.title}
+            </h1>
+            <p class="text-lg text-white/70">
+                {project.data.description}
+            </p>
+            {
+                project.data.tags && (
+                    <div class="flex flex-wrap gap-2 mt-4">
+                        {project.data.tags.map((tag) => (
+                            <span class="px-3 py-1 bg-white/20 text-white text-sm rounded-full">
+                                {tag}
+                            </span>
+                        ))}
+                    </div>
+                )
+            }
+            {
+                project.data.year && (
+                    <p class="text-sm mt-4 ml-1 text-white">
+                        {project.data.year}
+                    </p>
+                )
+            }
+        </header>
+        <div class="project-content">
+            <Prose>
+                <Content />
+            </Prose>
+        </div>
+    </article>
+</Layout>
+
+<script>
+    // Calculate precise slide distance based on element position
+    document.addEventListener("astro:before-preparation", (e) => {
+        const isNavigatingToHome =
+            e.newDocument?.URL.endsWith("/") ||
+            e.newDocument?.URL.match(/\/index\.html?$/);
+
+        if (isNavigatingToHome) {
+            const article = document.querySelector(
+                'article[transition\\:name="project-card"]',
+            );
+            if (article) {
+                const rect = article.getBoundingClientRect();
+                // Calculate distance to slide element's top edge below viewport bottom
+                const slideDistance = window.innerHeight - rect.top;
+                document.documentElement.style.setProperty(
+                    "--slide-distance",
+                    `${slideDistance}px`,
+                );
+            }
+        }
+    });
+</script>

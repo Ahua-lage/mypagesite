@@ -1,0 +1,23 @@
+---
+import MediaListItem from "@components/media/MediaListItem.astro";
+import type { Series } from "@api/github-series";
+
+interface Props {
+    series: Series;
+    status?: "watching" | "paused";
+    gardenNoteUrl?: string;
+}
+
+const { series, status, gardenNoteUrl } = Astro.props;
+---
+
+<MediaListItem
+    title={series.title}
+    subtitle={series.season}
+    date={series.finished}
+    coverUrl={series.cover}
+    rating={series.rating}
+    status={status}
+    isLiked={series.favorite}
+    gardenNoteUrl={gardenNoteUrl}
+/>

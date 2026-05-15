@@ -1,0 +1,9 @@
+---
+import BooksPage from "@components/books/BooksPage.astro";
+import { fetchBooks } from "@api/github-books";
+
+const booksData = await fetchBooks();
+const currentYear = new Date().getFullYear().toString();
+---
+
+<BooksPage booksData={booksData} selectedYear={currentYear} />

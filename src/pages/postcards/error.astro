@@ -1,0 +1,29 @@
+---
+import Layout from "@layouts/Layout.astro";
+---
+
+<Layout ogImage="/opengraph/postcards.jpg">
+    <div class="container max-w-md mx-auto py-40 px-4 text-center">
+        <h1 class="text-3xl font-bold mb-4 text-red-600">
+            出错了
+        </h1>
+        <p class="text-gray-600 mb-8">
+            提交你的明信片时出错了。请重试，如果问题持续存在请联系支持。
+        </p>
+        <div class="space-y-4">
+            <a
+                href="/postcards/new"
+                class="inline-flex items-center gap-2 px-6 py-3 bg-black text-white font-medium rounded-md hover:bg-gray-800 transition-colors"
+            >
+                重试
+            </a>
+            <br />
+            <a
+                href="/postcards"
+                class="text-gray-600 hover:text-gray-800 underline"
+            >
+                返回明信片页面
+            </a>
+        </div>
+    </div>
+</Layout>

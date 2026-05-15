@@ -1,0 +1,72 @@
+---
+import Grid from "@components/Grid.astro";
+import GridItem from "@components/GridItem.astro";
+import Layout from "@layouts/Layout.astro";
+---
+
+<Layout>
+    <Grid class="py-40">
+        <GridItem colStart={1} colEnd={6}>
+            <h2 class="text-lg font-bold">编辑</h2>
+            <ul>
+                <li>钟长华</li>
+                <li>3527320768@qq.com</li>
+                <li>www.your-website.com</li>
+            </ul>
+        </GridItem>
+        <GridItem colStart={7} colEnd={12}>
+            <h2 class="text-lg font-bold">联系方式</h2>
+            <ul>
+                <li>钟长华</li>
+                <li>Pelkovenstr. 70</li>
+                <li>80992 München</li>
+            </ul>
+        </GridItem>
+        <GridItem fullWidth class="flex flex-col gap-12 mt-20">
+            <div>
+                <h2 class="text-lg font-bold">内容责任</h2>
+                <p>
+                    作为服务提供商，我们根据德国《电信媒体法》（TMG）第7条第1款的一般立法，对本页面上的自有内容负责。但根据TMG第8至10条，我们作为服务提供商没有义务监控传输或存储的第三方信息，或调查表明非法活动的情况。根据一般法律，删除或阻止信息使用的义务不受影响。但是，只有在知晓具体违法行为时才可能承担相关责任。一旦我们知晓此类违法行为，我们将立即删除该内容。
+                </p>
+            </div>
+            <div>
+                <h2 class="text-lg font-bold">链接责任</h2>
+                <p>
+                    我们的服务包含指向第三方外部网站的链接，我们对这些网站的内容没有影响力。因此，我们不能对这些外部内容承担任何责任。链接页面的内容始终由各自的提供商或运营商负责。在链接时已检查链接页面是否存在可能的违法行为。在链接时无法识别非法内容。但是，在没有具体违法证据的情况下，对链接页面内容进行持续监控是不合理的。一旦我们知晓任何违法行为，我们将立即删除此类链接。
+                </p>
+            </div>
+            <div>
+                <h2 class="text-lg font-bold">版权</h2>
+                <p>
+                    网站运营商在这些页面上创建的内容和作品受德国版权法保护。在版权限制之外的复制、编辑、分发和任何形式的使用都需要各自作者或创作者的书面同意。本网站的下载和复制仅允许用于私人非商业用途。对于本网站上非由运营商创建的内容，尊重第三方版权。特别是，第三方内容会被明确标识。如果您仍发现版权侵权，请相应通知我们。一旦我们知晓任何侵权行为，我们将立即删除此类内容。
+                </p>
+            </div>
+            <div>
+                <h2 class="text-lg font-bold">隐私政策</h2>
+                <p>
+                    本网站运营商非常重视保护您的个人数据。我们会根据法定数据保护法规和本隐私政策保密处理您的个人数据。使用我们的网站通常无需提供个人数据。就本网站收集个人数据（例如姓名、地址或电子邮件地址）而言，这始终尽可能在自愿基础上进行。未经您的明确同意，这些数据不会传递给第三方。我们指出，互联网上的数据传输（例如通过电子邮件通信）可能存在安全漏洞。完全保护数据免受第三方访问是不可能的。
+                </p>
+            </div>
+            <div>
+                <h2 class="text-lg font-bold">明信片数据收集</h2>
+                <p>
+                    当您通过我们网站的明信片功能提交明信片时，我们会在我们的数据库中收集和存储以下信息（由Turso/LibSQL提供支持，托管在AWS EU-West-1）：
+                </p>
+                <ul class="list-disc ml-6 mt-4 space-y-2">
+                    <li>
+                        <strong>必填：</strong> 您的姓名和消息内容
+                    </li>
+                    <li>
+                        <strong>可选：</strong> 您的国家和网站网址（如提供）
+                    </li>
+                    <li>
+                        <strong>自动生成：</strong> 提交日期和用于显示目的的样式参数
+                    </li>
+                </ul>
+                <p class="mt-4">
+                    我们不会收集IP地址、电子邮件地址或除您自愿提供之外的任何其他个人标识符。所有明信片在发布前均需审核。您可以通过3527320768@qq.com联系我们，请求删除您的明信片数据。
+                </p>
+            </div>
+        </GridItem>
+    </Grid>
+</Layout>

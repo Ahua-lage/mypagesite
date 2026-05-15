@@ -1,0 +1,58 @@
+---
+import Collapsible from "./Collapsible.astro";
+import Chip from "./Chip.astro";
+
+interface Props {
+    tags: {
+        name: string;
+        count: number;
+        flag?: string;
+    }[];
+    selectedTag?: string;
+    basePath: string;
+    filterPath: string;
+    filterLabel: string;
+    total?: number;
+}
+
+const { tags, selectedTag, basePath, filterPath, filterLabel, total } =
+    Astro.props;
+
+// Sort tags by count (most frequent first)
+const sortedTags = [...tags].sort((a, b) => b.count - a.count);
+---
+
+<Collapsible
+    title={`Filter by ${filterLabel}`}
+    class="mb-12"
+    contentClass="pt-2"
+    open={true}
+>
+    <span slot="title-suffix">
+        {
+            selectedTag && (
+                <span class="inline group-open:hidden"> / ({selectedTag})</span>
+            )
+        }
+    </span>
+    <div class="flex flex-wrap gap-2">
+        <Chip
+            href={basePath}
+            title="all"
+            count={total}
+            isActive={!selectedTag}
+        />
+        {
+            sortedTags.map((tag) => (
+                <Chip
+                    href={`${basePath}/${filterPath}/${tag.name}`}
+                    title={tag.name}
+                    count={tag.count}
+                    isActive={selectedTag === tag.name}
+                    indicator={tag.flag}
+                    indicatorType="text"
+                />
+            ))
+        }
+    </div>
+</Collapsible>

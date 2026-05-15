@@ -1,0 +1,37 @@
+{
+    "name": "ahua-astro",
+    "type": "module",
+    "version": "0.0.1",
+    "scripts": {
+        "sync-data": "mkdir -p public/book-covers public/bookmark-covers src/data && cp -r data/output/book-covers/* public/book-covers/ && (cp -r data/output/bookmark-covers/* public/bookmark-covers/ 2>/dev/null || true) && cp data/output/books.json src/data/books.json && cp data/output/bookmarks.json src/data/bookmarks.json",
+        "prebuild": "npm run sync-data",
+        "dev": "npm run sync-data && astro dev",
+        "build": "astro build",
+        "preview": "astro preview",
+        "astro": "astro"
+    },
+    "dependencies": {
+        "@astrojs/db": "^0.18.3",
+        "@astrojs/netlify": "^6.6.4",
+        "@astrojs/rss": "^4.0.15",
+        "@astrojs/sitemap": "^3.7.0",
+        "@blossom-carousel/web": "^0.2.1",
+        "@tailwindcss/vite": "^4.1.17",
+        "astro": "^5.16.0",
+        "astro-icon": "^1.1.5",
+        "isomorphic-dompurify": "^2.33.0",
+        "marked": "^17.0.1",
+        "node-html-parser": "^7.0.1",
+        "p5": "^1.11.7",
+        "p5.js-svg": "^1.6.0",
+        "remark": "^15.0.1",
+        "resend": "^6.9.2",
+        "tailwindcss": "^4.1.17",
+        "typescript": "^5.9.3"
+    },
+    "devDependencies": {
+        "@iconify-json/ph": "^1.2.2",
+        "@tailwindcss/typography": "^0.5.19",
+        "@types/p5": "^1.7.7"
+    }
+}

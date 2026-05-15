@@ -1,0 +1,30 @@
+---
+import BookmarksPage from "@components/bookmarks/BookmarksPage.astro";
+import { fetchBookmarks } from "@api/obsidian-bookmarks";
+import type { Bookmark } from "@api/obsidian-bookmarks";
+
+export async function getStaticPaths() {
+    const allBookmarks: Bookmark[] = await fetchBookmarks();
+    const allTags = allBookmarks.flatMap((bookmark) => bookmark.tags);
+    const uniqueTags = [...new Set(allTags)];
+
+    return uniqueTags.map((tag) => {
+        const filteredBookmarks = allBookmarks.filter(
+            (bookmark) => bookmark.tags && bookmark.tags.includes(tag),
+        );
+
+        return {
+            params: { tag },
+            props: { tag, bookmarks: filteredBookmarks, allBookmarks },
+        };
+    });
+}
+
+const { tag, bookmarks, allBookmarks } = Astro.props;
+---
+
+<BookmarksPage
+    bookmarks={bookmarks}
+    allBookmarks={allBookmarks}
+    selectedTag={tag}
+/>

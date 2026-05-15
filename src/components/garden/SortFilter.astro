@@ -1,0 +1,47 @@
+---
+import Select from "@components/Select.astro";
+
+interface Props {
+    selectedSort: "newest" | "last-edited" | "alphabetical";
+    selectedCategory?: string;
+}
+
+const { selectedSort, selectedCategory } = Astro.props;
+
+const sortOptions = [
+    { label: "最新", value: "newest" },
+    { label: "最近编辑", value: "last-edited" },
+    { label: "按字母", value: "alphabetical" },
+];
+---
+
+<div
+    class="sort-filter mt-[39px]"
+    data-category={selectedCategory?.toLowerCase() || ""}
+>
+    <Select options={sortOptions} selectedValue={selectedSort} name="sort" />
+</div>
+
+<script>
+    function initSortFilter() {
+        const filters = document.querySelectorAll(".sort-filter");
+
+        filters.forEach((filter) => {
+            const select = filter.querySelector("select") as HTMLSelectElement;
+            if (!select) return;
+
+            const category = (filter as HTMLElement).dataset.category;
+
+            select.addEventListener("change", () => {
+                const sort = select.value;
+                const url = category
+                    ? `/garden/${category}/${sort}`
+                    : `/garden/sort/${sort}`;
+                window.location.href = url;
+            });
+        });
+    }
+
+    initSortFilter();
+    document.addEventListener("astro:after-swap", initSortFilter);
+</script>

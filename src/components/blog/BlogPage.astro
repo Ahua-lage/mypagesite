@@ -1,0 +1,96 @@
+---
+import type { CollectionEntry } from "astro:content";
+import Layout from "@layouts/Layout.astro";
+import Grid from "@components/Grid.astro";
+import GridItem from "@components/GridItem.astro";
+import TagCloud from "@components/TagCloud.astro";
+import YearContainer from "./YearContainer.astro";
+import Container from "@components/Container.astro";
+import HeadlineParagraphSection from "@components/HeadlineParagraphSection.astro";
+
+interface Props {
+    posts: CollectionEntry<"blog">[];
+    allPosts: CollectionEntry<"blog">[];
+    selectedCategory?: string;
+}
+
+const { posts, allPosts, selectedCategory } = Astro.props;
+
+// Sort posts by date
+const sortedPosts = [...posts].sort(
+    (a, b) => b.data.date.valueOf() - a.data.date.valueOf()
+);
+
+// Group by year
+const postsByYear = sortedPosts.reduce(
+    (acc, post) => {
+        const year = post.data.date.getFullYear();
+        if (!acc[year]) acc[year] = [];
+        acc[year].push(post);
+        return acc;
+    },
+    {} as Record<number, typeof sortedPosts>
+);
+
+const years = Object.keys(postsByYear)
+    .map(Number)
+    .sort((a, b) => b - a);
+
+// Generate category counts for the tag cloud
+const allCategories = allPosts.flatMap((post) => post.data.category || []);
+const categoryCounts = allCategories.reduce(
+    (acc, cat) => {
+        acc[cat] = (acc[cat] || 0) + 1;
+        return acc;
+    },
+    {} as Record<string, number>
+);
+
+const categoryCloudData = Object.entries(categoryCounts).map(
+    ([name, count]) => ({ name, count })
+);
+---
+
+<Layout>
+    <Container>
+        <Grid>
+            <GridItem colSpan={12}>
+                <HeadlineParagraphSection title="博客" isFirstElement>
+                    多年来一直想要有一个博客，现在我终于开始动笔了（或者说敲键盘）。我花了一些时间才鼓起勇气，但现在我很高兴能探索各种我感兴趣的话题。欢迎随时提出你的反馈和观点，我期待着这些文章带来的对话。
+                </HeadlineParagraphSection>
+
+                {allPosts.length > 0 && (
+                    <TagCloud
+                        tags={categoryCloudData}
+                        selectedTag={selectedCategory}
+                        basePath="/blog"
+                        filterPath="category"
+                        filterLabel="分类"
+                        total={allPosts.length}
+                    />
+                )}
+
+                <div>
+                    {years.length > 0 ? (
+                        years.map((year) => (
+                            <YearContainer
+                                posts={postsByYear[year]}
+                                year={year}
+                            />
+                        ))
+                    ) : (
+                        <div class="text-center py-20">
+                            <div class="text-6xl mb-4">📝</div>
+                            <h2 class="text-xl font-medium mb-2">暂无博客文章</h2>
+                            <p class="text-neutral-600">
+                                稍后再来查看新内容。
+                            </p>
+                        </div>
+                    )}
+                </div>
+            </GridItem>
+        </Grid>
+    </Container>
+</Layout>
+
+<script src="../../scripts/listItemImageHoverEffect.js"></script>

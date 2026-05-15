@@ -1,0 +1,50 @@
+---
+import { Icon } from "astro-icon/components";
+
+interface Props {
+    href: string;
+    external?: boolean;
+    standalone?: boolean;
+    class?: string;
+}
+
+const {
+    href,
+    external = false,
+    standalone = false,
+    class: className,
+} = Astro.props;
+const externalProps = external
+    ? { target: "_blank", rel: "noopener noreferrer" }
+    : {};
+
+const baseClasses =
+    "group font-inherit text-current underline decoration-border decoration-4 underline-offset-8 hover:italic";
+const standaloneClasses =
+    "group text-base font-mono flex gap-2 items-center underline underline-offset-8 hover:italic";
+---
+
+<a
+    href={href}
+    class:list={[standalone ? standaloneClasses : baseClasses, className]}
+    {...externalProps}
+    ><slot />{
+        external && !standalone && (
+            <Icon
+                name="ph:arrow-up-right-bold"
+                width={14}
+                class="inline-block ml-0.5 mb-1 group-hover:translate-x-0.5 transition-transform"
+            />
+        )
+    }{
+        standalone && (
+            <Icon
+                name={
+                    external ? "ph:arrow-up-right-bold" : "ph:arrow-right-bold"
+                }
+                width={16}
+                class="text-text-secondary group-hover:translate-x-1 group-hover:text-text-primary transition"
+            />
+        )
+    }</a
+>

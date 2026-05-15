@@ -1,0 +1,211 @@
+---
+import { Icon } from "astro-icon/components";
+import StarRating from "@components/StarRating.astro";
+import StatusBadge from "@components/StatusBadge.astro";
+import GardenSticker from "@components/stickers/GardenSticker.astro";
+
+interface Props {
+    title: string;
+    subtitle?: string;
+    date: string | null;
+    coverUrl?: string;
+    rating: number | null;
+    status?: "watching" | "paused";
+    isRewatch?: boolean;
+    isLiked?: boolean;
+    externalUrl?: string;
+    gardenNoteUrl?: string;
+}
+
+const {
+    title,
+    subtitle,
+    date,
+    coverUrl,
+    rating,
+    status,
+    isRewatch,
+    isLiked,
+    externalUrl,
+    gardenNoteUrl,
+} = Astro.props;
+
+const formatDate = (dateString: string | null) => {
+    if (!dateString) return "";
+    const d = new Date(dateString);
+    return d.toLocaleDateString("en-US", {
+        month: "short",
+        day: "2-digit",
+    });
+};
+
+const formattedDate = formatDate(date);
+---
+
+<div
+    class="list-item-image-hover-effect group relative border-b border-neutral-300 py-4 md:py-10"
+>
+    {
+        coverUrl && (
+            <img
+                class="cover-image pointer-events-none absolute z-10 hidden max-w-40 shadow-lg md:group-hover:block"
+                src={coverUrl}
+                alt={`${title} poster`}
+                width="160"
+                height="240"
+                loading="lazy"
+            />
+        )
+    }
+
+    <!-- Mobile layout -->
+    <div class="flex gap-3 md:hidden">
+        {
+            coverUrl && (
+                <img
+                    class="w-12 object-cover shrink-0 rounded-sm"
+                    src={coverUrl}
+                    alt=""
+                    width="48"
+                    height="72"
+                    loading="lazy"
+                />
+            )
+        }
+        <div class="flex flex-col justify-center gap-1 flex-1 min-w-0">
+            <div class="flex items-center gap-2">
+                <p class="text-base font-bold truncate">{title}</p>
+                {
+                    subtitle && (
+                        <span class="border border-neutral-300 text-text-secondary px-1.5 py-0.5 rounded text-xs shrink-0">
+                            <span class="hidden sm:inline">第</span>
+                            {subtitle}
+                        </span>
+                    )
+                }
+            </div>
+            <div class="flex items-center gap-2 text-sm">
+                {
+                    formattedDate && (
+                        <span class="font-mono text-neutral-400">
+                            {formattedDate}
+                        </span>
+                    )
+                }
+                {
+                    formattedDate && (rating || status) && (
+                        <span class="text-neutral-400">|</span>
+                    )
+                }
+                {status && <StatusBadge status={status} />}
+                {isRewatch && <StatusBadge status="rewatch" />}
+                {
+                    isLiked && (
+                        <Icon
+                            name="ph:heart-fill"
+                            width={14}
+                            class="text-red"
+                        />
+                    )
+                }
+                {
+                    gardenNoteUrl && (
+                        <span class="shrink-0">
+                            <GardenSticker
+                                size={20}
+                                iconColor="--color-sticker-green-dark"
+                                bgColor="--color-sticker-green"
+                            />
+                        </span>
+                    )
+                }
+                {
+                    rating !== null && rating > 0 && (
+                        <StarRating rating={rating} showValue size={14} />
+                    )
+                }
+            </div>
+        </div>
+    </div>
+
+    <!-- Desktop layout -->
+    <div class="hidden md:flex md:flex-row md:justify-between md:gap-12">
+        <div class="flex items-center gap-10">
+            <div class="shrink-0 min-w-[4.5rem]">
+                {
+                    formattedDate ? (
+                        <span class="font-mono">{formattedDate}</span>
+                    ) : status ? (
+                        <StatusBadge status={status} />
+                    ) : null
+                }
+            </div>
+            <div class="flex items-center gap-3">
+                {
+                    coverUrl && (
+                        <img
+                            class="w-8 h-12 object-cover shrink-0"
+                            src={coverUrl}
+                            alt=""
+                            width="32"
+                            height="48"
+                            loading="lazy"
+                        />
+                    )
+                }
+                <div class="flex items-center gap-2">
+                    <p class="text-base font-bold">{title}</p>
+                    {
+                        subtitle && (
+                            <span class="border border-neutral-300 text-text-secondary px-1.5 py-0.5 rounded text-xs">
+                                Season {subtitle}
+                            </span>
+                        )
+                    }
+                </div>
+            </div>
+        </div>
+        <div class="flex items-center gap-3">
+            {isRewatch && <StatusBadge status="rewatch" />}
+            {
+                isLiked && (
+                    <Icon name="ph:heart-fill" width={16} class="text-red" />
+                )
+            }
+            {
+                gardenNoteUrl && (
+                    <GardenSticker
+                        size={20}
+                        iconColor="--color-sticker-green-dark"
+                        bgColor="--color-sticker-green"
+                    />
+                )
+            }
+            {
+                rating !== null && rating > 0 && (
+                    <StarRating rating={rating} showValue size={16} />
+                )
+            }
+        </div>
+    </div>
+
+    {
+        gardenNoteUrl ? (
+            <a
+                href={gardenNoteUrl}
+                class="absolute bottom-0 left-0 right-0 top-0 h-full w-full"
+            >
+                <span class="sr-only">View garden note</span>
+            </a>
+        ) : externalUrl ? (
+            <a
+                href={externalUrl}
+                target="_blank"
+                rel="noopener"
+                class="absolute bottom-0 left-0 right-0 top-0 h-full w-full"
+            >
+                <span class="sr-only">View external link</span>
+            </a>
+        ) : null
+    }
+</div>

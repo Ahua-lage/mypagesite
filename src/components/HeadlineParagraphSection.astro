@@ -1,0 +1,96 @@
+---
+import Grid from "./Grid.astro";
+import GridItem, { type BreakpointValue } from "./GridItem.astro";
+import Link from "./Link.astro";
+import Button from "./Button.astro";
+import Container from "./Container.astro";
+
+interface Props {
+    class?: string;
+    title?: string;
+    linkText?: string;
+    linkUrl?: string;
+    contentStart?: number | BreakpointValue;
+    contentEnd?: number | BreakpointValue;
+    buttonStyle?: boolean;
+    buttonIcon?: any;
+    headlineSize?: "base" | "md" | "lg" | "xl";
+    isFirstElement?: boolean;
+}
+
+const {
+    title,
+    linkText,
+    linkUrl,
+    class: classes,
+    contentStart,
+    contentEnd,
+    buttonStyle,
+    headlineSize = "xl",
+    isFirstElement = false,
+} = Astro.props;
+
+const mergeBreakpointValue = (
+    prop: number | BreakpointValue | undefined,
+    defaultValue: BreakpointValue,
+): BreakpointValue => {
+    if (prop === undefined) return defaultValue;
+    if (typeof prop === "number") {
+        return { ...defaultValue, large: prop };
+    }
+    return prop;
+};
+
+const computedColStart = mergeBreakpointValue(contentStart, {
+    small: 1,
+    medium: 1,
+    large: 5,
+});
+
+const computedColEnd = mergeBreakpointValue(contentEnd, {
+    small: 13,
+    medium: 13,
+    large: linkText && linkUrl ? 10 : 13,
+});
+---
+
+<Container>
+    <hgroup>
+        <Grid
+            class={`mb-6 sm:mb-8 lg:mb-16 ${isFirstElement ? "pt-16 md:pt-32 pb-8 md:pb-24" : ""} ${classes}`}
+        >
+            <GridItem
+                colStart={{ small: 1, medium: 1, large: 1 }}
+                colEnd={{ small: 13, medium: 13, large: 4 }}
+            >
+                <h3 class={`text-${headlineSize} font-bold`}>
+                    {title ? title : <slot name="title" />}
+                </h3>
+            </GridItem>
+            <GridItem
+                colStart={computedColStart}
+                colEnd={computedColEnd}
+                class="text-base font-mono mt-4 lg:mt-0"
+            >
+                <slot />
+            </GridItem>
+            {
+                linkText && linkUrl && (
+                    <GridItem
+                        colStart={{ small: 1, medium: 1, large: 10 }}
+                        colEnd={{ small: 13, medium: 13, large: 13 }}
+                        class="flex lg:justify-end items-start mt-6 lg:mt-0"
+                    >
+                        {buttonStyle ? (
+                            <Button href={linkUrl}>{linkText}</Button>
+                        ) : (
+                            <Link href={linkUrl} external>
+                                {linkText}
+                            </Link>
+                        )}
+                    </GridItem>
+                )
+            }
+        </Grid>
+    </hgroup>
+</Container>

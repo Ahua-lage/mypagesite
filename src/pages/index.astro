@@ -1,0 +1,22 @@
+---
+import Layout from "@layouts/Layout.astro";
+import Hero from "../components/Hero.astro";
+import PostcardsSection from "@components/postcards/PostcardsSection.astro";
+import PhotographyCarousel from "@components/photography/PhotographyCarousel.astro";
+import ArtCarousel from "@components/art/ArtCarousel.astro";
+import Divider from "@components/Divider.astro";
+import ProjectsCarousel from "@components/sideprojects/ProjectsCarousel.astro";
+---
+
+<Layout>
+    <Hero />
+    <div class="mt-32 space-y-16 md:space-y-32">
+        <ProjectsCarousel />
+        <Divider />
+        <PhotographyCarousel />
+        <Divider />
+        <ArtCarousel />
+        <Divider />
+        <PostcardsSection limit={6} />
+    </div>
+</Layout>

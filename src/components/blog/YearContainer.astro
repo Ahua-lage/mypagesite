@@ -1,0 +1,21 @@
+---
+import YearSection from "@components/YearSection.astro";
+import type { CollectionEntry } from "astro:content";
+import BlogPostItem from "./BlogPostItem.astro";
+
+interface Props {
+    year: number;
+    posts: CollectionEntry<"blog">[];
+    currentCategory?: string;
+}
+
+const { year, posts = [], currentCategory } = Astro.props;
+---
+
+<YearSection year={year}>
+    {
+        posts.map((post) => (
+            <BlogPostItem post={post} currentCategory={currentCategory} />
+        ))
+    }
+</YearSection>

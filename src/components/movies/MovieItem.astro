@@ -1,0 +1,29 @@
+---
+import MediaListItem from "@components/media/MediaListItem.astro";
+
+interface Props {
+    film: {
+        title: string;
+        watched_on: string;
+        rating: number;
+        liked: boolean;
+        rewatched: boolean;
+        permalink: string;
+        posterUrl?: string;
+    };
+    gardenNoteUrl?: string;
+}
+
+const { film, gardenNoteUrl } = Astro.props;
+---
+
+<MediaListItem
+    title={film.title}
+    date={film.watched_on}
+    coverUrl={film.posterUrl}
+    rating={film.rating}
+    isRewatch={film.rewatched}
+    isLiked={film.liked}
+    externalUrl={`https://letterboxd.com/${film.permalink}`}
+    gardenNoteUrl={gardenNoteUrl}
+/>

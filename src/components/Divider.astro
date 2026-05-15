@@ -1,0 +1,16 @@
+---
+import Container from "./Container.astro";
+
+interface Props {
+    isBlack?: boolean;
+    class?: string;
+}
+
+const { isBlack, class: className } = Astro.props;
+---
+
+<Container
+    class=`font-mono truncate text-base text-clip tracking-widest ${isBlack ? 'text-black' : 'text-black/20'} ${className}`
+>
+    ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+</Container>

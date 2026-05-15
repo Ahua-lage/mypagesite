@@ -1,0 +1,33 @@
+---
+import type { Heading } from "../utils/markdown";
+import Collapsible from "./Collapsible.astro";
+import TableOfContentsItem from "./TableOfContentsItem.astro";
+
+interface Props {
+    headings: Heading[];
+}
+
+const { headings } = Astro.props;
+
+// Only show TOC if there are headings
+const showTOC = headings.length > 0;
+---
+
+{
+    showTOC && (
+        <Collapsible
+            title="目录"
+            class="mb-8"
+            contentClass="text-sm"
+            uppercase={false}
+        >
+            <nav id="TableOfContents" class="toc-nav">
+                <ul class="m-0 list-none p-0">
+                    {headings.map((heading) => (
+                        <TableOfContentsItem heading={heading} />
+                    ))}
+                </ul>
+            </nav>
+        </Collapsible>
+    )
+}

@@ -1,0 +1,277 @@
+---
+import { Icon } from "astro-icon/components";
+
+interface NavLinkItem {
+    label: string;
+    href: string;
+    icon?: string;
+    external?: boolean;
+}
+
+interface NavItem {
+    type: "link" | "group";
+    label: string;
+    href?: string;
+    external?: boolean;
+    items?: NavLinkItem[];
+}
+
+interface Props {
+    navigation: NavItem[];
+}
+
+const { navigation } = Astro.props;
+---
+
+<nav class="fixed bottom-5 left-4 right-4 z-50 pointer-events-none md:hidden">
+    <details id="mobile-menu" class="pointer-events-auto">
+        <summary
+            class="flex h-14 text-lg cursor-pointer items-center justify-center gap-2 rounded-3xl bg-neutral-800 text-white font-mono"
+        >
+            <Icon name="ph:list" class="menu-icon" width={24} />
+            <Icon name="ph:x" class="close-icon hidden" width={24} />
+            <span>菜单</span>
+        </summary>
+
+        <ul
+            class="absolute bottom-16 left-0 right-0 rounded-3xl bg-neutral-800 text-white text-lg p-2 flex flex-col"
+        >
+            {
+                navigation.map((item) =>
+                    item.type === "group" ? (
+                        <li>
+                            <details class="submenu-group">
+                                <summary class="flex items-center justify-between px-4 py-3 cursor-pointer rounded-xl hover:bg-white/10 transition-colors">
+                                    <span>{item.label}</span>
+                                    <Icon
+                                        name="ph:caret-down"
+                                        class="submenu-icon transition-transform"
+                                        width={16}
+                                    />
+                                </summary>
+                                <ul>
+                                    {item.items?.map((subItem) => (
+                                        <li>
+                                            <a
+                                                href={subItem.href}
+                                                class="mobile-nav-link flex items-center gap-2 px-4 py-2 rounded-xl hover:bg-white/10 transition-colors"
+                                                target={
+                                                    subItem.external
+                                                        ? "_blank"
+                                                        : undefined
+                                                }
+                                                rel={
+                                                    subItem.external
+                                                        ? "noopener"
+                                                        : undefined
+                                                }
+                                            >
+                                                <Icon
+                                                    name="ph:arrow-right"
+                                                    class="text-white/40"
+                                                    width={16}
+                                                />
+                                                {subItem.label}
+                                                {subItem.external && (
+                                                    <Icon
+                                                        name="ph:arrow-up-right"
+                                                        width={14}
+                                                    />
+                                                )}
+                                            </a>
+                                        </li>
+                                    ))}
+                                </ul>
+                            </details>
+                        </li>
+                    ) : (
+                        <li>
+                            <a
+                                href={item.href}
+                                class="mobile-nav-link flex items-center gap-2 px-4 py-3 rounded-xl hover:bg-white/10 transition-colors"
+                                target={item.external ? "_blank" : undefined}
+                                rel={item.external ? "noopener" : undefined}
+                            >
+                                {item.label}
+                                {item.external && (
+                                    <Icon name="ph:arrow-up-right" width={14} />
+                                )}
+                            </a>
+                        </li>
+                    ),
+                )
+            }
+            <li class="border-t border-white/10 mt-1 pt-1">
+                <details class="submenu-group">
+                    <summary
+                        class="flex items-center justify-between px-4 py-2 cursor-pointer rounded-xl hover:bg-white/10 transition-colors text-sm text-white/60"
+                    >
+                        <div class="flex items-center gap-2">
+                            <Icon name="ph:rss-simple" width={16} />
+                            <span>RSS 订阅</span>
+                        </div>
+                        <Icon
+                            name="ph:caret-down"
+                            class="submenu-icon transition-transform"
+                            width={16}
+                        />
+                    </summary>
+                    <ul>
+                        {
+                            [
+                                {
+                                    label: "博客",
+                                    url: "/blog-rss.xml",
+                                },
+                                {
+                                    label: "书签",
+                                    url: "/bookmarks-rss.xml",
+                                },
+                            ].map((feed) => (
+                                <li>
+                                    <div class="flex items-center gap-2 px-4 py-2 rounded-xl hover:bg-white/10 transition-colors">
+                                        <Icon
+                                            name="ph:arrow-right"
+                                            class="text-white/40"
+                                            width={16}
+                                        />
+                                        <span class="font-mono text-sm flex-1">
+                                            {feed.label}
+                                        </span>
+                                        <button
+                                            class="rss-copy-btn p-2 hover:bg-white/20 rounded-lg transition-colors"
+                                            data-url={feed.url}
+                                            title="复制链接"
+                                            aria-label={`复制 ${feed.label} RSS 订阅链接`}
+                                        >
+                                            <Icon
+                                                name="ph:copy"
+                                                class="copy-icon"
+                                                width={16}
+                                            />
+                                            <Icon
+                                                name="ph:check"
+                                                class="check-icon hidden"
+                                                width={16}
+                                            />
+                                        </button>
+                                        <a
+                                            href={feed.url}
+                                            class="p-2 hover:bg-white/20 rounded-lg transition-colors"
+                                            title="打开订阅"
+                                        >
+                                            <Icon
+                                                name="ph:arrow-square-out"
+                                                width={16}
+                                            />
+                                        </a>
+                                    </div>
+                                </li>
+                            ))
+                        }
+                    </ul>
+                </details>
+            </li>
+            <li class="border-t border-white/10 mt-1 pt-1">
+                <div class="flex items-center gap-2 px-4 py-2 rounded-xl hover:bg-white/10 transition-colors">
+                    <Icon
+                        name="ph:envelope-simple"
+                        class="text-white/40"
+                        width={16}
+                    />
+                    <span class="font-mono text-sm flex-1">
+                        3527320768@qq.com
+                    </span>
+                    <button
+                        class="email-copy-btn p-2 hover:bg-white/20 rounded-lg transition-colors"
+                        data-email="3527320768@qq.com"
+                        title="复制邮箱"
+                        aria-label="复制邮箱地址"
+                    >
+                        <Icon
+                            name="ph:copy"
+                            class="copy-icon"
+                            width={16}
+                        />
+                        <Icon
+                            name="ph:check"
+                            class="check-icon hidden"
+                            width={16}
+                        />
+                    </button>
+                    <a
+                        href="mailto:3527320768@qq.com"
+                        class="p-2 hover:bg-white/20 rounded-lg transition-colors"
+                        title="发送邮件"
+                    >
+                        <Icon
+                            name="ph:arrow-square-out"
+                            width={16}
+                        />
+                    </a>
+                </div>
+            </li>
+        </ul>
+    </details>
+</nav>
+
+<style>
+    /* Toggle icons when menu is open */
+    details[open] .menu-icon {
+        display: none;
+    }
+    details[open] .close-icon {
+        display: block;
+    }
+
+    /* Rotate submenu icon when open */
+    details.submenu-group[open] .submenu-icon {
+        transform: rotate(180deg);
+    }
+
+    /* Remove default marker from summary elements */
+    summary {
+        list-style: none;
+    }
+    summary::marker,
+    summary::-webkit-details-marker {
+        display: none;
+    }
+</style>
+
+<script>
+    function initMobileMenu() {
+        const mobileMenu = document.getElementById(
+            "mobile-menu",
+        ) as HTMLDetailsElement;
+        const mobileNavLinks = document.querySelectorAll(".mobile-nav-link");
+
+        if (!mobileMenu) return;
+
+        // Prevent duplicate event listeners
+        if (mobileMenu.dataset.initialized) return;
+        mobileMenu.dataset.initialized = "true";
+
+        // Close menu when clicking a link
+        mobileNavLinks.forEach((link) => {
+            link.addEventListener("click", () => {
+                mobileMenu.open = false;
+            });
+        });
+
+        // Close menu when clicking outside
+        document.addEventListener("click", (e) => {
+            if (!mobileMenu.contains(e.target as Node)) {
+                mobileMenu.open = false;
+            }
+        });
+    }
+
+    // For view transitions (navigation between pages)
+    document.addEventListener("astro:page-load", initMobileMenu);
+
+    // For direct page loads - run immediately if DOM is ready
+    if (document.readyState !== "loading") {
+        initMobileMenu();
+    }
+</script>

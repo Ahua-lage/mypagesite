@@ -1,0 +1,117 @@
+@theme {
+    /* Warm paper palette (for light theme - aged paper, like a well-used book) */
+    --color-paper-50: oklch(97.5% 0.015 85);
+    --color-paper-100: oklch(95% 0.02 82);
+    --color-paper-150: oklch(92% 0.025 80);
+    --color-paper-200: oklch(88% 0.03 78);
+    --color-paper-300: oklch(80% 0.035 75);
+    --color-paper-400: oklch(65% 0.04 70);
+    --color-paper-500: oklch(50% 0.04 65);
+    --color-paper-600: oklch(40% 0.035 60);
+    --color-paper-700: oklch(33% 0.03 55);
+    --color-paper-800: oklch(25% 0.025 50);
+    --color-paper-900: oklch(18% 0.02 45);
+    --color-paper-950: oklch(12% 0.015 40);
+
+    /* Neutral palette (for dark theme) */
+    --color-neutral-50: oklch(0.985 0.001 106.423);
+    --color-neutral-100: oklch(0.97 0.001 106.424);
+    --color-neutral-200: oklch(0.923 0.003 48.717);
+    --color-neutral-300: oklch(0.869 0.005 56.366);
+    --color-neutral-400: oklch(0.709 0.01 56.259);
+    --color-neutral-500: oklch(0.553 0.013 58.071);
+    --color-neutral-600: oklch(0.444 0.011 73.639);
+    --color-neutral-700: oklch(0.374 0.01 67.558);
+    --color-neutral-800: oklch(0.268 0.007 34.298);
+    --color-neutral-900: oklch(0.216 0.006 56.043);
+    --color-neutral-950: oklch(0.147 0.004 49.25);
+
+    /* Base semantic colors (light theme uses warm paper) */
+    --color-background: var(--color-paper-50);
+    --color-foreground: var(--color-paper-900);
+
+    /* Surfaces (cards, containers, elevated elements) */
+    --color-surface: var(--color-paper-100);
+    --color-surface-raised: var(--color-paper-150);
+    --color-surface-inverse: var(--color-paper-800);
+
+    /* Text hierarchy */
+    --color-text-primary: var(--color-paper-900);
+    --color-text-secondary: var(--color-paper-500);
+    --color-text-muted: var(--color-paper-400);
+    --color-text-inverse: var(--color-paper-200);
+
+    /* Interactive states */
+    --color-hover-bg: var(--color-paper-100);
+    --color-hover-text: var(--color-paper-500);
+
+    /* Borders */
+    --color-border: var(--color-paper-200);
+    --color-border-light: var(--color-paper-100);
+    --color-border-dark: var(--color-paper-300);
+    --color-border-darkest: var(--color-paper-600);
+
+    /* Accent color palette */
+    --color-yellow: oklch(0.85 0.18 85.65);
+    --color-yellow-dark: oklch(0.55 0.12 85.65);
+    --color-yellow-light: oklch(0.91 0.13 92.5);
+
+    --color-blue: oklch(0.7 0.13 255.5);
+    --color-blue-dark: oklch(0.4 0.08 255.5);
+    --color-blue-light: oklch(0.82 0.08 255.5);
+
+    --color-red: oklch(0.73 0.14 22.5);
+    --color-red-dark: oklch(0.43 0.09 22.5);
+    --color-red-light: oklch(0.82 0.1 22.5);
+
+    --color-lilac: oklch(0.81 0.11 295);
+    --color-lilac-dark: oklch(0.47 0.05 295);
+    --color-lilac-light: oklch(0.9 0.06 295);
+
+    --color-green: oklch(0.75 0.16 155);
+    --color-green-dark: oklch(0.45 0.1 155);
+    --color-green-light: oklch(0.85 0.1 155);
+
+    /* Sticker colors (using accent palette) */
+    --color-sticker-yellow: var(--color-yellow);
+    --color-sticker-yellow-dark: var(--color-yellow-dark);
+    --color-sticker-yellow-light: var(--color-yellow-light);
+
+    --color-sticker-blue: var(--color-blue);
+    --color-sticker-blue-dark: var(--color-blue-dark);
+    --color-sticker-blue-light: var(--color-blue-light);
+
+    --color-sticker-red: var(--color-red);
+    --color-sticker-red-dark: var(--color-red-dark);
+    --color-sticker-red-light: var(--color-red-light);
+
+    --color-sticker-lilac: var(--color-lilac);
+    --color-sticker-lilac-dark: var(--color-lilac-dark);
+    --color-sticker-lilac-light: var(--color-lilac-light);
+
+    --color-sticker-green: var(--color-green);
+    --color-sticker-green-dark: var(--color-green-dark);
+    --color-sticker-green-light: var(--color-green-light);
+}
+
+@layer base {
+    [data-theme="dark"] {
+        --color-background: var(--color-neutral-900);
+        --color-foreground: var(--color-neutral-100);
+
+        --color-surface: var(--color-neutral-800);
+        --color-surface-raised: var(--color-neutral-700);
+        --color-surface-inverse: var(--color-neutral-200);
+
+        --color-text-primary: var(--color-neutral-100);
+        --color-text-secondary: var(--color-neutral-400);
+        --color-text-muted: var(--color-neutral-500);
+
+        --color-hover-bg: var(--color-neutral-800);
+        --color-hover-text: var(--color-neutral-400);
+
+        --color-border: var(--color-neutral-700);
+        --color-border-light: var(--color-neutral-800);
+        --color-border-dark: var(--color-neutral-600);
+    }
+}

@@ -1,0 +1,151 @@
+---
+import Layout from "@layouts/Layout.astro";
+import SeriesYearContainer from "@components/series/SeriesYearContainer.astro";
+import SeriesItem from "@components/series/SeriesItem.astro";
+import HeadlineParagraphSection from "@components/HeadlineParagraphSection.astro";
+import Container from "@components/Container.astro";
+import { fetchSeries } from "@api/github-series";
+import { buildGardenNoteMap } from "@utils/gardenNotes";
+
+let seriesData;
+let error = null;
+
+try {
+    seriesData = await fetchSeries();
+} catch (e) {
+    console.error("Failed to fetch series data:", e);
+    error = e instanceof Error ? e.message : "Unknown error occurred";
+    seriesData = {
+        lastUpdated: new Date().toISOString(),
+        count: 0,
+        aktiv: [],
+        merkliste: [],
+        pausiert: [],
+        abgeschlossen: {},
+    };
+}
+
+const { aktiv, merkliste, pausiert, abgeschlossen } = seriesData;
+
+// Get current year
+const currentYear = new Date().getFullYear();
+
+// Sort series within each year by finished date (newest first)
+// Only include series that have a valid finished date
+const sortSeriesByDate = (seriesList: typeof aktiv) => {
+    if (!Array.isArray(seriesList)) return [];
+    return [...seriesList]
+        .filter((s) => s.finished)
+        .sort((a, b) => {
+            const dateA = new Date(a.finished!).getTime();
+            const dateB = new Date(b.finished!).getTime();
+            return dateB - dateA;
+        });
+};
+
+// Get years from abgeschlossen and sort (newest first)
+// Filter out invalid keys (NaN from empty/null dates)
+const years = Object.keys(abgeschlossen)
+    .map(Number)
+    .filter((year) => !isNaN(year))
+    .sort((a, b) => b - a);
+
+// Check if current year exists in completed
+const hasCurrentYear = years.includes(currentYear);
+
+const allSeriesFlat = [
+    ...aktiv,
+    ...merkliste,
+    ...pausiert,
+    ...Object.values(abgeschlossen).flat(),
+];
+const gardenNoteMap = await buildGardenNoteMap(
+    "Series",
+    allSeriesFlat.map((s) => s.title),
+);
+---
+
+<Layout>
+    <HeadlineParagraphSection title="剧集" isFirstElement>
+        我在 Obsidian 中记录观看的剧集，在那里记录和整理我看过的所有内容。为了让这个收藏更容易浏览，数据会自动更新并显示在我的网站上。它作为个人档案，也让我可以回顾一段时间以来的观看记录。
+    </HeadlineParagraphSection>
+    <Container>
+        {
+            error && (
+                <div class="bg-red-50 border border-red-200 rounded-lg p-4 mb-8">
+                    <p class="text-red-800">
+                        加载剧集数据失败: {error}
+                    </p>
+                </div>
+            )
+        }
+
+        {
+            (aktiv.length > 0 ||
+                Object.keys(abgeschlossen).length > 0 ||
+                merkliste.length > 0) && (
+                <div>
+                    {/* Current year with aktiv series */}
+                    {(hasCurrentYear || aktiv.length > 0) && (
+                        <SeriesYearContainer
+                            year={currentYear}
+                            series={sortSeriesByDate(
+                                abgeschlossen[currentYear.toString()] || [],
+                            )}
+                            aktivSeries={aktiv}
+                            gardenNoteMap={gardenNoteMap}
+                        />
+                    )}
+
+                    {/* Previous years */}
+                    {years
+                        .filter((year) => year !== currentYear)
+                        .map((year) => (
+                            <SeriesYearContainer
+                                year={year}
+                                series={sortSeriesByDate(
+                                    abgeschlossen[year.toString()],
+                                )}
+                                gardenNoteMap={gardenNoteMap}
+                            />
+                        ))}
+
+                    {/* Want to Watch section */}
+                    {merkliste.length > 0 && (
+                        <div class="relative grid grid-cols-12 gap-4">
+                            <h2 class="col-start-1 col-end-13 h-fit pb-2 pt-10 font-mono md:sticky md:top-12 md:col-end-3 md:mb-8 md:pb-2">
+                                想看
+                            </h2>
+                            <div class="col-start-1 col-end-13 md:col-start-4">
+                                {merkliste.map((s) => {
+                                    const match = gardenNoteMap.get(s.title);
+                                    const gardenNoteUrl = match ? `/garden/${match.category}/${match.slug}` : undefined;
+                                    return <SeriesItem series={s} gardenNoteUrl={gardenNoteUrl} />;
+                                })}
+                            </div>
+                        </div>
+                    )}
+                </div>
+            )
+        }
+
+        {
+            aktiv.length === 0 &&
+                Object.keys(abgeschlossen).length === 0 &&
+                merkliste.length === 0 &&
+                !error && (
+                    <div class="text-center py-20">
+                        <div class="text-6xl mb-4">📺</div>
+                        <h2 class="text-xl font-medium mb-2">
+                            未找到剧集
+                        </h2>
+                        <p class="text-neutral-600">
+                            稍后再来查看剧集更新。
+                        </p>
+                    </div>
+                )
+        }
+    </Container>
+
+    <script src="../scripts/listItemImageHoverEffect.js"></script>
+</Layout>

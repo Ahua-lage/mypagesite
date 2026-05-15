@@ -1,0 +1,72 @@
+---
+import Layout from "@layouts/Layout.astro";
+import MovieYearContainer from "@components/movies/MovieYearContainer.astro";
+import HeadlineParagraphSection from "@components/HeadlineParagraphSection.astro";
+import Container from "@components/Container.astro";
+import { buildGardenNoteMap } from "@utils/gardenNotes";
+
+const movieData = {
+    films: [],
+    count: 0,
+    updated_at: new Date().toISOString(),
+};
+
+const { films } = movieData;
+
+const sortedFilms = [];
+
+const filmsByYear = {} as Record<number, typeof sortedFilms>;
+
+const years = Object.keys(filmsByYear)
+    .map(Number)
+    .sort((a, b) => b - a);
+
+const gardenNoteMap = await buildGardenNoteMap(
+    "Movies",
+    sortedFilms.map((f) => f.title),
+);
+---
+
+<Layout>
+    <HeadlineParagraphSection title="电影" isFirstElement>
+        我在 Letterboxd 上记录观看的电影，在那里记录和整理我看过的所有内容。为了让这个收藏更容易浏览，数据会自动更新并显示在我的网站上。它作为个人档案，也让我可以回顾一段时间以来的观影记录。
+    </HeadlineParagraphSection>
+    <Container>
+        {
+            films.length > 0 && (
+                <div>
+                    {years.map((year) => (
+                        <MovieYearContainer
+                            films={filmsByYear[year]}
+                            year={year}
+                            gardenNoteMap={gardenNoteMap}
+                        />
+                    ))}
+                </div>
+            )
+        }
+
+        {
+            films.length === 0 && (
+                <div class="text-center py-20">
+                    <div class="text-6xl mb-4">🎬</div>
+                    <h2 class="text-xl font-medium mb-2">未找到电影</h2>
+                    <p class="text-neutral-600">
+                        稍后再来查看电影更新。
+                    </p>
+                </div>
+            )
+        }
+    </Container>
+
+    <style>
+        .line-clamp-2 {
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+        }
+    </style>
+
+    <script src="../scripts/listItemImageHoverEffect.js"></script>
+</Layout>

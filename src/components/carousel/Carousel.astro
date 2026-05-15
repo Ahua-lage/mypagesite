@@ -1,0 +1,128 @@
+---
+import "@blossom-carousel/core/style.css";
+import Link from "@components/Link.astro";
+import HeadlineParagraphSection from "@components/HeadlineParagraphSection.astro";
+import Container from "@components/Container.astro";
+
+interface Props {
+    columns?: number;
+    gap?: string;
+    headline?: string;
+    description?: string;
+    link?: {
+        href: string;
+        text: string;
+        external?: boolean;
+        disabled?: boolean;
+    };
+    headlineSize?: "base" | "md" | "lg" | "xl";
+    alignment?: "top" | "center" | "bottom";
+    autoWidth?: boolean;
+}
+
+const alignmentMap = { top: "start", center: "center", bottom: "end" } as const;
+
+const {
+    columns = 12,
+    gap = "16px",
+    headline,
+    description,
+    link,
+    headlineSize,
+    alignment = "top",
+    autoWidth = false,
+} = Astro.props;
+---
+
+<section
+    class="carousel-section flex flex-col"
+    style={`--columns: ${columns}; --gap: ${gap}; gap: var(--gap);`}
+>
+    {
+        (headline || description) && (
+            <HeadlineParagraphSection
+                title={headline}
+                headlineSize={headlineSize}
+            >
+                {description}
+            </HeadlineParagraphSection>
+        )
+    }
+
+    <blossom-carousel
+        class:list={["carousel", { "auto-width": autoWidth }]}
+        style={alignment !== "top"
+            ? `align-items: ${alignmentMap[alignment]}`
+            : undefined}
+    >
+        <slot />
+    </blossom-carousel>
+
+    {
+        link && (
+            <Container class="flex justify-end">
+                {link.disabled ? (
+                    <span class="text-base font-mono flex gap-2 items-center text-text-secondary cursor-default">
+                        {link.text}
+                    </span>
+                ) : (
+                    <Link
+                        href={link.href}
+                        class="self-end"
+                        standalone
+                        external={link.external}
+                    >
+                        {link.text}
+                    </Link>
+                )}
+            </Container>
+        )
+    }
+</section>
+
+<script>
+    import { BlossomCarousel } from "@blossom-carousel/web";
+</script>
+
+<style>
+    .carousel-section :global(.carousel) {
+        display: grid;
+        grid-auto-flow: column;
+        grid-auto-columns: calc(
+            (var(--max-width) - (var(--columns) - 1) * var(--gap)) /
+                var(--columns)
+        );
+        gap: var(--gap);
+        padding-inline: max(0px, calc((100vw - var(--max-width)) / 2));
+        scroll-padding-inline-start: max(
+            0px,
+            calc((100vw - var(--max-width)) / 2)
+        );
+    }
+
+    .carousel-section :global(.carousel.auto-width) {
+        grid-auto-columns: max-content;
+    }
+
+    @media (min-width: 769px) and (max-width: 1088px) {
+        .carousel-section :global(.carousel) {
+            grid-auto-columns: calc(
+                (100vw - (var(--columns) - 1) * var(--gap) - 64px) /
+                    var(--columns)
+            );
+            padding-inline: 32px;
+            scroll-padding-inline-start: 32px;
+        }
+    }
+
+    @media (max-width: 768px) {
+        .carousel-section :global(.carousel) {
+            grid-auto-columns: calc(
+                (100vw - (var(--columns) - 1) * var(--gap) - 32px) /
+                    var(--columns)
+            );
+            padding-inline: 16px;
+            scroll-padding-inline-start: 16px;
+        }
+    }
+</style>

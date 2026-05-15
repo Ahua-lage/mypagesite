@@ -1,0 +1,153 @@
+---
+import ContactItem from "./ContactItem.astro";
+import Grid from "./Grid.astro";
+import GridItem from "./GridItem.astro";
+import WaveSticker from "./stickers/WaveSticker.astro";
+import MailSticker from "./stickers/MailSticker.astro";
+import MastodonSticker from "./stickers/MastodonSticker.astro";
+import GlassSticker from "./stickers/GlassSticker.astro";
+import DesignSticker from "./stickers/DesignSticker.astro";
+
+const stickerClass =
+    "icon-for-service absolute -top-4 right-4 transition-transform md:right-auto md:top-32";
+---
+
+<Grid
+    class="rounded-xl p-10 bg-surface text-text-primary relative transition-colors"
+    id="contact-container"
+>
+    <GridItem
+        class="flex justify-between flex-col"
+        colSpan={{ small: 12, medium: 12, large: 3 }}
+    >
+        <h2 class="text-lg font-bold">联系我</h2>
+        <WaveSticker
+            id="icon-for-default"
+            class={stickerClass}
+            size={64}
+            iconColor="--color-sticker-yellow-dark"
+            bgColor="--color-sticker-yellow"
+        />
+        <MailSticker
+            id="icon-for-email"
+            class={`${stickerClass} -rotate-12 scale-0`}
+            size={64}
+            iconColor="--color-sticker-blue-dark"
+            bgColor="--color-sticker-blue-light"
+        />
+        <MastodonSticker
+            id="icon-for-mastodon"
+            class={`${stickerClass} rotate-12 scale-0`}
+            size={64}
+            iconColor="--color-sticker-lilac-dark"
+            bgColor="--color-sticker-lilac-light"
+        />
+        <GlassSticker
+            id="icon-for-glass"
+            class={`${stickerClass} -rotate-[8deg] scale-0`}
+            size={64}
+            iconColor="--color-sticker-yellow-dark"
+            bgColor="--color-sticker-yellow-light"
+        />
+        <DesignSticker
+            id="icon-for-github"
+            class={`${stickerClass} -rotate-[8deg] scale-0`}
+            size={64}
+            iconColor="--color-sticker-red-dark"
+            bgColor="--color-sticker-red-light"
+        />
+    </GridItem>
+    <GridItem colSpan={{ small: 12, medium: 12, large: 9 }}>
+        <ul>
+            <ContactItem
+                id="email-contact-item"
+                stickerColor="blue"
+                service="邮箱"
+                handle="3527320768@qq.com"
+                url="mailto:3527320768@qq.com"
+            />
+            <ContactItem
+                id="mastodon-contact-item"
+                stickerColor="lilac"
+                service="微信"
+                handle="Ahuaggbs"
+                url="#"
+            />
+            <ContactItem
+                id="glass-contact-item"
+                stickerColor="yellow"
+                service="抖音"
+                handle="1"
+                url="#"
+            />
+            <ContactItem
+                id="github-contact-item"
+                stickerColor="red"
+                service="GitHub"
+                handle="@your-github-username"
+                url="https://github.com/your-github-username"
+            />
+        </ul>
+    </GridItem>
+</Grid>
+
+<script>
+    document.addEventListener("astro:page-load", () => {
+        if (window.innerWidth < 640) return;
+        const contactItems = document.querySelectorAll(".contact-item");
+        const container = document.getElementById(
+            "contact-container",
+        ) as HTMLElement;
+        const icons = document.querySelectorAll(".icon-for-service");
+        const contactItemBorders = document.querySelectorAll(
+            ".contact-item a",
+        ) as NodeListOf<HTMLElement>;
+
+        contactItems.forEach((item) => {
+            const stickerColor = (item as HTMLElement).dataset
+                .stickerColor as string;
+
+            item.addEventListener("mouseover", () => {
+                const service = item.getAttribute("id")?.split("-")[0];
+                icons.forEach((icon) => {
+                    if (icon.id === `icon-for-${service}`) {
+                        icon.classList.remove("scale-0");
+                    } else {
+                        icon.classList.add("scale-0");
+                    }
+                });
+
+                // Use CSS variables for sticker colors
+                if (container) {
+                    container.style.backgroundColor = `var(--color-sticker-${stickerColor})`;
+                    container.style.color = `var(--color-sticker-${stickerColor}-dark)`;
+                }
+
+                // Set border color on all contact items
+                contactItemBorders.forEach((border) => {
+                    border.style.borderColor = `var(--color-sticker-${stickerColor}-dark)`;
+                });
+            });
+
+            item.addEventListener("mouseout", () => {
+                icons.forEach((icon) => {
+                    icon.classList.add("scale-0");
+                    if (icon.id === "icon-for-default") {
+                        icon.classList.remove("scale-0");
+                    }
+                });
+
+                // Reset to semantic theme colors
+                if (container) {
+                    container.style.backgroundColor = "";
+                    container.style.color = "";
+                }
+
+                // Reset border color
+                contactItemBorders.forEach((border) => {
+                    border.style.borderColor = "";
+                });
+            });
+        });
+    });
+</script>

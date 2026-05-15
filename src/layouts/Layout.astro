@@ -1,0 +1,118 @@
+---
+import "../styles/global.css";
+import { ClientRouter } from "astro:transitions";
+import Header from "../components/navigation/Header.astro";
+import Footer from "@components/Footer.astro";
+
+interface Props {
+    hasHeader?: boolean;
+    title?: string;
+    description?: string;
+    ogImage?: string;
+    favicon?: string;
+}
+
+const {
+    hasHeader = true,
+    title,
+    description = "Ahua 的个人空间",
+    ogImage = "/opengraph/opengraph.jpg",
+    favicon,
+} = Astro.props;
+
+const siteUrl = Astro.site?.origin || Astro.url.origin;
+const fullOgImageUrl = new URL(ogImage, siteUrl).toString();
+const canonicalUrl = new URL(Astro.url.pathname, siteUrl).toString();
+
+// Get page name from URL path (e.g., "/movies" → "movies")
+const pathSegment = Astro.url.pathname.split("/").filter(Boolean)[0];
+
+// Auto-detect favicon from path if not provided
+const faviconPath =
+    favicon || (pathSegment ? `/favicon-${pathSegment}.svg` : "/favicon.svg");
+const pageTitle = title
+    ? `${title} | Ahua`
+    : pathSegment
+      ? `${pathSegment} | Ahua`
+      : "Ahua";
+---
+
+<!doctype html>
+<html lang="en">
+    <head>
+        <meta charset="utf-8" />
+        <link rel="icon" type="image/svg+xml" href={faviconPath} />
+        <meta name="viewport" content="width=device-width" />
+        <meta name="theme-color" content="#FFC200" />
+        <link
+            rel="apple-touch-icon"
+            sizes="180x180"
+            href="/apple-touch-icon.png"
+        />
+        <link
+            rel="icon"
+            type="image/png"
+            sizes="32x32"
+            href="/favicon-32x32.png"
+        />
+        <link
+            rel="icon"
+            type="image/png"
+            sizes="16x16"
+            href="/favicon-16x16.png"
+        />
+        <link rel="manifest" href="/site.webmanifest" />
+        <link rel="canonical" href={canonicalUrl} />
+        <link
+            rel="alternate"
+            type="application/rss+xml"
+            title="钟长华 - 博客"
+            href="/blog-rss.xml"
+        />
+        <link
+            rel="alternate"
+            type="application/rss+xml"
+            title="钟长华 - 书签"
+            href="/bookmarks-rss.xml"
+        />
+        <meta name="generator" content={Astro.generator} />
+        <title>{pageTitle}</title>
+        <meta name="description" content={description} />
+        <meta property="og:title" content={pageTitle} />
+        <meta property="og:image" content={fullOgImageUrl} />
+        <meta property="og:type" content="website" />
+        <meta property="og:description" content={description} />
+        <meta property="og:url" content={canonicalUrl} />
+        <meta name="twitter:card" content="summary_large_image" />
+        <ClientRouter />
+        <!-- <script
+            defer
+            src="https://umami.example.com/script.js"
+            data-website-id="your-website-id"></script> -->
+        <script is:inline>
+            // Mark that JS is enabled (for graceful degradation)
+            document.documentElement.classList.add("js");
+
+            // Apply theme immediately to prevent flash on initial load
+            (function () {
+                const theme = localStorage.getItem("theme");
+                if (theme === "dark") {
+                    document.documentElement.dataset.theme = theme;
+                }
+            })();
+
+            // Preserve theme during View Transitions
+            document.addEventListener("astro:before-swap", (e) => {
+                const theme = localStorage.getItem("theme");
+                if (theme === "dark") {
+                    e.newDocument.documentElement.dataset.theme = theme;
+                }
+            });
+        </script>
+    </head>
+    <body class="bg-background text-foreground">
+        {hasHeader && <Header />}
+        <slot />
+        <Footer class="mt-32" />
+    </body>
+</html>

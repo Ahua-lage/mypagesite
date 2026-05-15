@@ -1,0 +1,29 @@
+---
+import Contact from "./Contact.astro";
+import Container from "./Container.astro";
+
+interface Props {
+    class?: string;
+}
+
+const { class: className } = Astro.props;
+---
+
+<Container class={className}>
+    <Contact />
+    <footer class="flex justify-between mb-4 mt-12 pb-20 md:pb-0">
+        <p class="text-sm text-text-secondary">
+            © <span id="copyright-year"></span>, <span class="block sm:inline"
+                >钟长华</span
+            >
+        </p>
+    </footer>
+</Container>
+
+<script>
+    document.addEventListener("astro:page-load", function () {
+        const copyrightYear = document.getElementById("copyright-year");
+        if (copyrightYear)
+            copyrightYear.textContent = new Date().getFullYear().toString();
+    });
+</script>

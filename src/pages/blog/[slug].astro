@@ -1,0 +1,278 @@
+---
+import { getCollection } from "astro:content";
+import Layout from "../../layouts/Layout.astro";
+import "../../styles/sidenotes.css";
+import "../../styles/blog-styles.css";
+import TableOfContents from "@components/TableOfContents.astro";
+import { extractHeadings } from "../../utils/markdown";
+import MastodonStats from "@components/blog/MastodonStats.astro";
+import Divider from "@components/Divider.astro";
+import Container from "@components/Container.astro";
+
+// Generate static paths for all blog posts
+export async function getStaticPaths() {
+    const blogEntries = await getCollection("blog");
+
+    // Sort by date descending
+    const sortedEntries = [...blogEntries].sort(
+        (a, b) => b.data.date.getTime() - a.data.date.getTime(),
+    );
+
+    return Promise.all(
+        sortedEntries.map(async (entry, index) => {
+            // Extract headings from the markdown content
+            const headings = await extractHeadings(entry.body);
+
+            // Find previous and next posts
+            const previousPost = index > 0 ? sortedEntries[index - 1] : null;
+            const nextPost =
+                index < sortedEntries.length - 1
+                    ? sortedEntries[index + 1]
+                    : null;
+
+            return {
+                params: { slug: entry.slug },
+                props: {
+                    entry,
+                    headings,
+                    previousPost,
+                    nextPost,
+                },
+            };
+        }),
+    );
+}
+
+// Get the blog post for this page
+const { entry, headings, previousPost, nextPost } = Astro.props;
+const { Content } = await entry.render();
+
+// Format date (DD / MM / YYYY)
+const formatDate = (date: Date) => {
+    const day = String(date.getDate()).padStart(2, "0");
+    const month = String(date.getMonth() + 1).padStart(2, "0");
+    const year = date.getFullYear();
+    return `${day} / ${month} / ${year}`;
+};
+---
+
+<Layout
+    title={entry.data.title}
+    description={entry.data.description}
+    ogImage={entry.data.ogImageName ? `/opengraph/${entry.data.ogImageName}` : undefined}
+>
+    <Container>
+        <article
+            class="py-12 md:py-20"
+            data-prev-post={previousPost
+                ? `/blog/${previousPost.slug}`
+                : undefined}
+            data-next-post={nextPost ? `/blog/${nextPost.slug}` : undefined}
+        >
+            <div class="mx-auto max-w-[65ch]">
+                <h1
+                    class="font-sans text-[2rem] font-black leading-[1.15] md:text-[3rem]"
+                >
+                    {entry.data.title}
+                    {
+                        entry.data.subtitle && (
+                            <span class="mt-2 block text-[1.25rem] font-bold opacity-80 md:text-[1.75rem]">
+                                {entry.data.subtitle}
+                            </span>
+                        )
+                    }
+                </h1>
+
+                <!-- Metadata -->
+                <div
+                    class="mt-6 flex flex-wrap gap-4 font-mono text-sm text-muted"
+                >
+                    <span>
+                        {formatDate(entry.data.date)}
+                    </span>
+                    {
+                        entry.data.category && (
+                            <>
+                                <span>·</span>
+                                <a
+                                    href={`/blog/category/${entry.data.category}`}
+                                    class="transition-colors hover:text-foreground"
+                                >
+                                    {entry.data.category}
+                                </a>
+                            </>
+                        )
+                    }
+                </div>
+
+                <Divider />
+            </div>
+
+            <!-- Table of Contents -->
+            {
+                headings.length > 0 && (
+                    <div class="mx-auto mb-8 max-w-[65ch]">
+                        <TableOfContents headings={headings} />
+                    </div>
+                )
+            }
+
+            <!-- Markdown content with sidenotes support -->
+            <div class="markdown prose prose-lg">
+                <Content />
+            </div>
+
+            <!-- Mastodon Stats -->
+            {
+                entry.data.mastodonId && (
+                    <div class="mx-auto mt-16 max-w-[65ch]">
+                        <MastodonStats statusId={entry.data.mastodonId} />
+                    </div>
+                )
+            }
+
+            <!-- Previous/Next Navigation -->
+            {
+                (previousPost || nextPost) && (
+                    <div class="mx-auto mt-16 flex max-w-[65ch] gap-4 border-t border-border pt-8">
+                        {previousPost && (
+                            <a
+                                href={`/blog/${previousPost.slug}`}
+                                class="flex-1 rounded-lg p-4 transition-colors hover:bg-surface"
+                            >
+                                <span class="text-sm text-muted">
+                                    ← Previous
+                                </span>
+                                <p class="mt-1 font-medium">
+                                    {previousPost.data.title}
+                                </p>
+                            </a>
+                        )}
+                        {nextPost && (
+                            <a
+                                href={`/blog/${nextPost.slug}`}
+                                class={`flex-1 rounded-lg p-4 text-right transition-colors hover:bg-surface ${!previousPost ? "ml-auto" : ""}`}
+                            >
+                                <span class="text-sm text-muted">下一篇 →</span>
+                                <p class="mt-1 font-medium">
+                                    {nextPost.data.title}
+                                </p>
+                            </a>
+                        )}
+                    </div>
+                )
+            }
+        </article>
+    </Container>
+</Layout>
+
+<style>
+    /* Markdown prose styling for blog posts */
+    .markdown {
+        max-width: 65ch;
+        margin: 0 auto;
+        font-size: 1.2rem;
+    }
+
+    .markdown :global(hr) {
+        display: block;
+        margin: 3rem 0;
+        border: none;
+    }
+
+    .markdown :global(hr)::after {
+        content: "------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------";
+        display: block;
+        color: var(--color-muted);
+        position: absolute;
+        margin: 0 32px;
+        left: 0;
+        right: 0;
+        font-family: "Fira Mono", monospace;
+        letter-spacing: 0.1em;
+        font-size: 1.125rem;
+        line-height: 1.5;
+        text-overflow: clip;
+        overflow: hidden;
+        white-space: nowrap;
+    }
+
+    .markdown :global(a) {
+        text-decoration: none;
+        border-bottom: 1px dashed var(--color-muted);
+        padding-bottom: 3px;
+        position: relative;
+        margin-right: 20px;
+        font-style: italic;
+    }
+
+    .markdown :global(a)::after {
+        content: "↗";
+        position: absolute;
+        font-style: normal;
+        top: 0;
+        line-height: 1.2em;
+        right: -18px;
+        font-size: 1.2em;
+        color: var(--color-muted);
+    }
+
+    /* Code block styling */
+    .markdown :global(pre) {
+        background: var(--color-surface);
+        border: 1px solid var(--color-border);
+        border-radius: 4px;
+        padding: 1rem;
+        overflow-x: auto;
+    }
+
+    .markdown :global(code) {
+        font-family: "Fira Mono", monospace;
+        font-size: 0.9em;
+    }
+
+    .markdown :global(:not(pre) > code) {
+        background: var(--color-surface);
+        padding: 0.2em 0.4em;
+        border-radius: 3px;
+    }
+
+    /* Blockquote styling */
+    .markdown :global(blockquote) {
+        border-left: 3px solid var(--color-border);
+        padding-left: 1rem;
+        font-style: italic;
+        color: var(--color-muted);
+    }
+</style>
+
+<script src="../../scripts/sidenotes.js"></script>
+
+<script>
+    // Keyboard navigation for prev/next posts
+    function handleKeyboardNavigation(e: KeyboardEvent) {
+        // Don't trigger if user is typing in an input
+        if (
+            e.target instanceof HTMLInputElement ||
+            e.target instanceof HTMLTextAreaElement
+        ) {
+            return;
+        }
+
+        const article = document.querySelector(
+            "article[data-prev-post], article[data-next-post]",
+        );
+        if (!article) return;
+
+        const prevUrl = article.getAttribute("data-prev-post");
+        const nextUrl = article.getAttribute("data-next-post");
+
+        if (e.key === "ArrowLeft" && prevUrl) {
+            window.location.href = prevUrl;
+        } else if (e.key === "ArrowRight" && nextUrl) {
+            window.location.href = nextUrl;
+        }
+    }
+
+    document.addEventListener("keydown", handleKeyboardNavigation);
+</script>

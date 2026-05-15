@@ -1,0 +1,368 @@
+---
+import { Icon } from "astro-icon/components";
+import NavLink from "./NavLink.astro";
+import NavGroup from "./NavGroup.astro";
+import MobileMenu from "./MobileMenu.astro";
+import ThemeSwitcher from "./ThemeSwitcher.astro";
+import RssDropdown from "./RssDropdown.astro";
+import EmailDropdown from "./EmailDropdown.astro";
+import Container from "@components/Container.astro";
+
+const isIndexPage = Astro.url.pathname === "/";
+
+const navigation = [
+    {
+        type: "group" as const,
+        label: "媒体日志",
+        items: [
+            {
+                label: "书籍",
+                href: "/books",
+                sticker: "books",
+                external: false,
+            },
+            {
+                label: "电影",
+                href: "/movies",
+                sticker: "movie",
+                external: false,
+            },
+            {
+                label: "剧集",
+                href: "/series",
+                sticker: "tv-series",
+                external: false,
+            },
+            {
+                label: "音乐",
+                href: "/music",
+                sticker: "music",
+                external: false,
+            },
+        ],
+    },
+    // {
+    //     type: "link" as const,
+    //     label: "关于",
+    //     href: "/about",
+    // },
+    {
+        type: "link" as const,
+        label: "书签",
+        href: "/bookmarks",
+    },
+    {
+        type: "link" as const,
+        label: "明信片",
+        href: "/postcards",
+    },
+    {
+        type: "link" as const,
+        label: "数字花园",
+        href: "/garden",
+    },
+    {
+        type: "link" as const,
+        label: "博客",
+        href: "/blog",
+    },
+    {
+        type: "link" as const,
+        label: "摄影",
+        href: "/photography",
+        external: false,
+    },
+];
+---
+
+<header
+    id="site-header"
+    data-index-page={isIndexPage ? "true" : undefined}
+    class:list={[
+        "sticky top-0 z-30 mt-4 md:mt-8 border-border",
+        { "bg-surface": isIndexPage },
+    ]}
+>
+    <Container>
+        <div class="flex items-center justify-between h-16">
+            <!-- Logo -->
+            <a
+                href="/"
+                id="site-logo"
+                class="text-md font-bold hover:text-neutral-500 transition-colors hover:italic min-w-24"
+            >
+                <p class="leading-none">
+                    i<span class="logo-space w-1 inline-block"></span>am
+                </p>
+                <p class="logo-robin leading-none -mt-1.5 ml-5">Ahua</p>
+            </a>
+
+            <!-- Desktop Navigation -->
+            <nav class="hidden md:flex items-center gap-6">
+                {
+                    navigation.map((item) =>
+                        item.type === "link" ? (
+                            <NavLink
+                                label={item.label}
+                                href={item.href!}
+                                external={item.external}
+                            />
+                        ) : (
+                            <NavGroup label={item.label} items={item.items!} />
+                        ),
+                    )
+                }
+            </nav>
+
+            <div
+                class="hidden md:flex items-center gap-0.5 relative"
+                id="header-icons"
+            >
+                <div
+                    data-annotation-target
+                    data-annotation-text="保持联系<br/>订阅更新"
+                >
+                    <RssDropdown />
+                </div>
+                <div
+                    data-annotation-target
+                    data-annotation-text="不要害羞<br/>给我写信 :)"
+                    data-annotation-default
+                >
+                    <EmailDropdown />
+                </div>
+                <div
+                    data-annotation-target
+                    data-annotation-text="开启深色模式!"
+                    data-annotation-text-alt="切换到<br/>浅色模式!"
+                >
+                    <ThemeSwitcher />
+                </div>
+                {
+                    isIndexPage && (
+                        <div class="annotation" id="header-annotation">
+                            <p class="annotation-text">
+                                不要害羞<br/>给我写信 :)
+                            </p>
+                            <Icon
+                                name="arrow-scribble"
+                                class="annotation-arrow"
+                            />
+                        </div>
+                    )
+                }
+            </div>
+        </div>
+    </Container>
+</header>
+
+<!-- Mobile Menu -->
+<MobileMenu navigation={navigation} />
+
+<style>
+    .annotation {
+        position: absolute;
+        top: 0;
+        left: -16px;
+        display: flex;
+        margin-top: 64px;
+        transform: translateX(-64px);
+        color: #3b2f2f;
+        pointer-events: none;
+        transition: left 0.3s ease;
+        opacity: 0.7;
+    }
+
+    :global([data-theme="dark"]) .annotation {
+        color: white;
+    }
+
+    .annotation-arrow {
+        width: 36px;
+        height: 40px;
+        margin-top: -24px;
+        rotate: -20deg;
+        flex-shrink: 0;
+    }
+
+    .annotation-text {
+        font-family: var(--font-decorative);
+        font-size: 1.6rem;
+        line-height: 1.1;
+        rotate: -2deg;
+        margin: 0;
+        text-align: center;
+        width: 100px;
+    }
+</style>
+
+<script>
+    // Module-level flag - persists across view transitions, resets on full page load
+    let hasAnimated = false;
+
+    function initHeader() {
+        const header = document.getElementById("site-header");
+        const logo = document.getElementById("site-logo");
+        const logoRobin = document.getElementsByClassName("logo-robin");
+        const logoSpace = document.getElementsByClassName("logo-space");
+        const annotation = header.querySelector(
+            ".annotation",
+        ) as HTMLElement | null;
+
+        if (!header || !logo) return;
+
+        // Use the margin-top value (mt-8 = 32px) as the sticky threshold
+        const stickyThreshold = 32;
+        const isSticky = window.scrollY >= stickyThreshold;
+        const isIndexPage = header.dataset.indexPage === "true";
+        const isDesktop = window.matchMedia("(min-width: 768px)").matches;
+
+        if (!hasAnimated && isIndexPage && !isSticky && isDesktop) {
+            // First visit to index page, not scrolled, desktop - trigger CSS animation
+            hasAnimated = true;
+            header.classList.add("header-animate");
+        } else {
+            // Already animated, other pages, scrolled, or mobile - show immediately
+            hasAnimated = true;
+            header.classList.add("header-visible");
+        }
+
+        function updateHeaderStyle() {
+            const isSticky = window.scrollY >= stickyThreshold;
+
+            if (isSticky) {
+                header?.classList.add("border-b", "bg-background");
+                header?.classList.remove("bg-surface");
+                logo?.classList.add("flex");
+                logoRobin[0]?.classList.remove("-mt-1.5", "ml-5");
+                logoSpace[0]?.classList.remove("w-1");
+                if (annotation) annotation.style.display = "none";
+            } else {
+                header?.classList.remove("border-b", "bg-background");
+                logo?.classList.remove("flex");
+                logoRobin[0]?.classList.add("-mt-1.5", "ml-5");
+                logoSpace[0]?.classList.add("w-1");
+                if (annotation) annotation.style.display = "";
+            }
+        }
+
+        // Initial check
+        updateHeaderStyle();
+
+        // Listen for scroll
+        window.addEventListener("scroll", updateHeaderStyle);
+
+        // Annotation hover interaction
+        if (annotation) {
+            const iconGroup = document.getElementById("header-icons");
+            const annotationText = annotation.querySelector(
+                ".annotation-text",
+            ) as HTMLElement | null;
+            const iconTargets = header.querySelectorAll<HTMLElement>(
+                "[data-annotation-target]",
+            );
+            const defaultTarget = header.querySelector<HTMLElement>(
+                "[data-annotation-default]",
+            );
+
+            // Remove CSS transform so JS fully controls positioning
+            annotation.style.transform = "none";
+
+            function updateAnnotation(target: HTMLElement) {
+                if (!annotation || !annotationText || !iconGroup) return;
+
+                const targetRect = target.getBoundingClientRect();
+                const groupRect = iconGroup.getBoundingClientRect();
+                const targetCenter =
+                    targetRect.left - groupRect.left + targetRect.width / 2;
+
+                // Position so the arrow tip aligns with the icon center
+                // The arrow is on the right side of the annotation
+                const arrowTipOffset = 0;
+                const annotationWidth = annotation.offsetWidth;
+                annotation.style.left = `${targetCenter - annotationWidth + arrowTipOffset}px`;
+
+                let text = target.dataset.annotationText || "";
+                if (target.dataset.annotationTextAlt) {
+                    const isDark =
+                        document.documentElement.dataset.theme === "dark";
+                    text = isDark ? target.dataset.annotationTextAlt : text;
+                }
+                annotationText.innerHTML = text;
+            }
+
+            // Set initial position to default target
+            if (defaultTarget) {
+                updateAnnotation(defaultTarget);
+            }
+
+            iconTargets.forEach((target) => {
+                target.addEventListener("mouseenter", () =>
+                    updateAnnotation(target),
+                );
+            });
+
+            iconGroup?.addEventListener("mouseleave", () => {
+                if (defaultTarget) {
+                    updateAnnotation(defaultTarget);
+                }
+            });
+
+            // Re-update annotation when theme changes while hovering
+            const themeSwitcher = document.getElementById("theme-switcher");
+            const themeTarget = themeSwitcher?.closest("[data-annotation-target]") as HTMLElement | null;
+            if (themeSwitcher && themeTarget) {
+                themeSwitcher.addEventListener("click", () => {
+                    // Wait a tick for the theme to actually change
+                    requestAnimationFrame(() => updateAnnotation(themeTarget));
+                });
+            }
+        }
+    }
+
+    // For view transitions (navigation between pages)
+    document.addEventListener("astro:page-load", initHeader);
+
+    // For direct page loads - run immediately if DOM is ready
+    if (document.readyState !== "loading") {
+        initHeader();
+    }
+</script>
+
+<style is:global>
+    /* Header animation keyframes */
+    @keyframes headerSlideIn {
+        from {
+            opacity: 0;
+            transform: translateY(-100%);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+
+    /* Initial state - hidden until JS adds a class */
+    #site-header:not(.header-visible):not(.header-animate) {
+        opacity: 0;
+        transform: translateY(-100%);
+    }
+
+    /* Animated entrance (index page, desktop, first visit) */
+    /* Using 'both' fill-mode keeps first keyframe styles during delay */
+    #site-header.header-animate {
+        animation: headerSlideIn 0.5s cubic-bezier(0.39, 0.24, 0.3, 1) 1.5s both;
+    }
+
+    /* Immediate visibility (other pages or return visits) */
+    #site-header.header-visible {
+        opacity: 1;
+        transform: translateY(0);
+    }
+
+    /* When JS is disabled, show header immediately */
+    html:not(.js) #site-header {
+        opacity: 1 !important;
+        transform: translateY(0) !important;
+    }
+</style>

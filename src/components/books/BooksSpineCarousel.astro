@@ -1,0 +1,109 @@
+---
+import Carousel from "@components/carousel/Carousel.astro";
+import CarouselItem from "@components/carousel/CarouselItem.astro";
+import type { Book } from "@api/github-books";
+import YearSpineStack from "./YearSpineStack.astro";
+
+interface Props {
+    abgeschlossen: Record<string, Book[]>;
+}
+
+const { abgeschlossen } = Astro.props;
+
+// Newest first (left to right)
+const sortedYears = Object.keys(abgeschlossen).sort(
+    (a, b) => Number(b) - Number(a),
+);
+
+// Y-axis guide lines at 500-page intervals
+const pxPerPage = 0.11;
+const pageStep = 500;
+const stepPx = pageStep * pxPerPage; // 55px per step
+const maxPages = Math.max(
+    ...sortedYears.map((y) =>
+        abgeschlossen[y].reduce(
+            (s: number, b: Book) => s + (Number(b.pages) || 0),
+            0,
+        ),
+    ),
+);
+// Fill lines beyond the tallest stack to cover the top padding area (pt-20 + stats ≈ 104px)
+const maxStackPx = maxPages * pxPerPage;
+const lineCount = Math.floor((maxStackPx + 104) / stepPx);
+const guideLines = [
+    { pages: 0, bottom: 0 },
+    ...Array.from({ length: lineCount }, (_, i) => ({
+        pages: (i + 1) * pageStep,
+        bottom: (i + 1) * stepPx,
+    })),
+];
+---
+
+<Carousel
+    headline="Annual stacks of books"
+    headlineSize="base"
+    columns={12}
+    gap="0px"
+>
+    {
+        sortedYears.map((year, index) => {
+            const books = abgeschlossen[year];
+            const totalPages = books.reduce(
+                (sum: number, book: Book) => sum + (Number(book.pages) || 0),
+                0,
+            );
+            const isFirst = index === 0;
+            const isLast = index === sortedYears.length - 1;
+            const roundedClass = isFirst
+                ? "rounded-l-lg"
+                : isLast
+                  ? "rounded-r-lg"
+                  : "";
+            return (
+                <CarouselItem
+                    smallSpan={10}
+                    mediumSpan={6}
+                    largeSpan={4}
+                    paddingTop={24}
+                >
+                    <div class="flex flex-col h-full">
+                        <div
+                            class={`relative flex flex-col justify-end items-center h-full w-full bg-surface-raised pt-20 pb-12 px-10 ${roundedClass}`}
+                        >
+                            {guideLines.map((line) => (
+                                <div
+                                    class="absolute left-0 right-0 z-10 flex items-center"
+                                    style={`bottom: ${line.bottom + 48}px;`}
+                                >
+                                    {isFirst && (
+                                        <span class="absolute left-2 -top-5 text-xs font-mono text-text-secondary opacity-50">
+                                            {line.pages.toLocaleString()}
+                                        </span>
+                                    )}
+                                    <div class="w-full border-t border-dashed border-border-dark" />
+                                </div>
+                            ))}
+                            <div class="relative z-20 flex flex-col items-center w-full">
+                                <div class="mb-2">
+                                    <span class="text-sm font-mono font-bold text-text-primary">
+                                        {books.length}{" "}
+                                        {books.length === 1 ? "book" : "books"}
+                                    </span>
+                                    <span class="text-sm font-mono text-text-primary">
+                                        | {totalPages.toLocaleString()} pages
+                                    </span>
+                                </div>
+                                <YearSpineStack books={books} />
+                            </div>
+                        </div>
+                        <div class="flex justify-center mt-3">
+                            <span class="text-base font-bold text-text-primary">
+                                {year}
+                            </span>
+                        </div>
+                    </div>
+                </CarouselItem>
+            );
+        })
+    }
+</Carousel>

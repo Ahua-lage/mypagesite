@@ -1,0 +1,67 @@
+---
+import Carousel from "../carousel/Carousel.astro";
+import CarouselItem from "../carousel/CarouselItem.astro";
+import ProjectCard from "./ProjectCard.astro";
+import { getCollection } from "astro:content";
+
+const smallSpan = 10;
+const mediumSpan = 8;
+const largeSpan = 4;
+
+const headline = "项目";
+const description =
+    "像我们大多数人一样——我有很多想法和项目想要实现。许多想法消失在我的笔记里，或是变成电脑里随机的思绪。但你相信吗？其中一些真的实现了。";
+
+const projectsCollection = await getCollection("projects");
+
+// Extract the last year from a year string (e.g., "2015-2017" → 2017, "2025" → 2025)
+const getLastYear = (year: string | undefined): number => {
+    if (!year) return 0;
+    const parts = year.split("-");
+    return parseInt(parts[parts.length - 1], 10) || 0;
+};
+
+const projects = projectsCollection
+    .sort((a, b) => getLastYear(b.data.year) - getLastYear(a.data.year))
+    .map((project) => ({
+        slug: project.slug,
+        title: project.data.title,
+        description: project.data.description,
+        thumbnail: project.data.thumbnail,
+        thumbnailWidth: project.data.thumbnailWidth,
+        tags: project.data.tags,
+        year: project.data.year,
+        bgColor: project.data.bgColor,
+        bgColorDark: project.data.bgColorDark,
+        externalUrl: project.data.externalUrl,
+        draft: project.data.draft,
+    }));
+---
+
+<Carousel headline={headline} description={description}>
+    {
+        projects.map((project) => (
+            <CarouselItem
+                smallSpan={smallSpan}
+                mediumSpan={mediumSpan}
+                largeSpan={largeSpan}
+                paddingBottom={64}
+                paddingTop={24}
+            >
+                <ProjectCard
+                    slug={project.slug}
+                    title={project.title}
+                    description={project.description}
+                    year={project.year}
+                    bgColor={project.bgColor}
+                    bgColorDark={project.bgColorDark}
+                    thumbnail={project.thumbnail}
+                    thumbnailWidth={project.thumbnailWidth}
+                    externalUrl={project.externalUrl}
+                    tags={project.tags}
+                    draft={project.draft}
+                />
+            </CarouselItem>
+        ))
+    }
+</Carousel>

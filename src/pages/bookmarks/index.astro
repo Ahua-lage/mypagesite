@@ -1,0 +1,9 @@
+---
+import BookmarksPage from "@components/bookmarks/BookmarksPage.astro";
+import { fetchBookmarks } from "@api/obsidian-bookmarks";
+import type { Bookmark } from "@api/obsidian-bookmarks";
+
+const bookmarks: Bookmark[] = await fetchBookmarks();
+---
+
+<BookmarksPage bookmarks={bookmarks} allBookmarks={bookmarks} />

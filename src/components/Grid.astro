@@ -1,0 +1,36 @@
+---
+interface Props {
+    columns?: number;
+    gap?: string;
+    class?: string;
+    id?: string;
+    hasMaxWidth?: boolean;
+}
+
+const { columns, gap, class: className, id, hasMaxWidth = true } = Astro.props;
+---
+
+<div
+    id={id}
+    class:list={["grid", hasMaxWidth && "grid--max-width", className]}
+    style={[columns && `--columns: ${columns}`, gap && `--gap: ${gap}`]
+        .filter(Boolean)
+        .join("; ")}
+>
+    <slot />
+</div>
+
+<style>
+    .grid {
+        display: grid;
+        grid-template-columns: repeat(var(--columns), 1fr);
+        gap: var(--gap);
+        width: 100%;
+        container-type: inline-size;
+    }
+
+    .grid--max-width {
+        max-width: var(--max-width);
+        margin: 0 auto;
+    }
+</style>

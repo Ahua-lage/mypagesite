@@ -1,0 +1,101 @@
+@font-face {
+    font-family: "apercu";
+    src: url("/fonts/apercu-regular-pro.woff2") format("woff2"),
+        url("/fonts/apercu-regular-pro.woff") format("woff");
+    font-weight: normal;
+    font-style: normal;
+    font-display: auto;
+}
+
+@font-face {
+    font-family: "apercu";
+    src: url("/fonts/apercu-bold-pro.woff2") format("woff2"),
+        url("/fonts/apercu-bold-pro.woff") format("woff");
+    font-weight: bold;
+    font-style: normal;
+    font-display: auto;
+}
+
+/* fira-mono-regular - latin */
+@font-face {
+    font-display: swap;
+    font-family: "Fira Mono";
+    font-style: normal;
+    font-weight: 400;
+    src: url("/fonts/fira-mono-v14-latin-regular.woff2") format("woff2");
+}
+/* fira-mono-700 - latin */
+@font-face {
+    font-display: swap;
+    font-family: "Fira Mono";
+    font-style: normal;
+    font-weight: 700;
+    src: url("/fonts/fira-mono-v14-latin-700.woff2") format("woff2");
+}
+
+@font-face {
+    font-family: "LiebeHeide";
+    src: url("/fonts/LiebeHeide-FinelinerBold.otf") format("opentype");
+    font-weight: bold;
+    font-style: normal;
+}
+
+@theme {
+    /* Font Family */
+    --font-*: initial;
+    --font-sans: "apercu", ui-sans-serif, system-ui, sans-serif,
+        "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol",
+        "Noto Color Emoji";
+    --font-mono: "Fira Mono", ui-monospace, SFMono-Regular, Menlo, Monaco,
+        Consolas, "Liberation Mono", "Courier New", monospace;
+    --font-decorative: "LiebeHeide", ui-sans-serif, system-ui, sans-serif,
+        "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol",
+        "Noto Color Emoji";
+
+    /* Font Weight */
+    --font-weight-*: initial;
+    --font-weight-hairline: 100;
+    --font-weight-thin: 200;
+    --font-weight-light: 300;
+    --font-weight-normal: 400;
+    --font-weight-medium: 500;
+    --font-weight-semibold: 600;
+    --font-weight-bold: 700;
+    --font-weight-extrabold: 800;
+    --font-weight-black: 900;
+
+    /* Line Height */
+    --leading-xs: 0.8;
+    --leading-sm: 0.9;
+    --leading-none: 1;
+    --leading-tight: 1.25;
+    --leading-snug: 1.375;
+    --leading-normal: 1.5;
+    --leading-relaxed: 1.625;
+    --leading-loose: 2;
+
+    /*
+   https://www.fluid-type-scale.com/calculate?minFontSize=16&minWidth=400&minRatio=1.2&maxFontSize=18&maxWidth=1024&maxRatio=1.25&steps=sm%2Cbase%2Cmd%2Clg%2Cxl%2C2xl%2C3xl%2C4xl&baseStep=base&prefix=text&useContainerWidth=false&includeFallbacks=false&useRems=true&remValue=16&decimals=2&previewFont=Fira+Mono&previewText=Almost+before+we+knew+it%2C+we+had+left+the+ground&previewWidth=1024
+  */
+
+    /* Font Size */
+    --text-sm: clamp(0.83rem, 0.17vi + 0.79rem, 0.9rem);
+    --text-base: clamp(1rem, 0.32vi + 0.92rem, 1.13rem);
+    --text-md: clamp(1.2rem, 0.53vi + 1.07rem, 1.41rem);
+    --text-lg: clamp(1.44rem, 0.81vi + 1.24rem, 1.76rem);
+    --text-xl: clamp(1.73rem, 1.2vi + 1.43rem, 2.2rem);
+    --text-2xl: clamp(2.07rem, 1.73vi + 1.64rem, 2.75rem);
+    --text-3xl: clamp(2.49rem, 2.42vi + 1.88rem, 3.43rem);
+    --text-4xl: clamp(2.99rem, 3.35vi + 2.15rem, 4.29rem);
+
+    /* Line Height */
+    --text-2xs--line-height: var(--leading-relaxed);
+    --text-xs--line-height: var(--leading-relaxed);
+    --text-sm--line-height: var(--leading-relaxed);
+    --text-base--line-height: var(--leading-relaxed);
+    --text-lg--line-height: var(--leading-normal);
+    --text-xl--line-height: var(--leading-tight);
+    --text-2xl--line-height: var(--leading-tight);
+    --text-3xl--line-height: var(--leading-tight);
+    --text-4xl--line-height: var(--leading-none);
+}

@@ -1,0 +1,63 @@
+---
+import { db, Postcard, desc, eq } from "astro:db";
+import { Icon } from "astro-icon/components";
+import PostcardsCarousel from "./PostcardsCarousel.astro";
+import Container from "../Container.astro";
+import HeadlineParagraphSection from "@components/HeadlineParagraphSection.astro";
+
+export interface Props {
+    limit?: number | null;
+    postcards?: (typeof Postcard.$inferSelect)[];
+    hasDescription?: boolean;
+}
+
+const { limit = null, postcards, hasDescription = true } = Astro.props;
+
+let recentPostcards;
+
+// If postcards are provided as prop, use them (with optional limit)
+if (postcards) {
+    recentPostcards = limit ? postcards.slice(0, limit) : postcards;
+} else {
+    // Otherwise, fetch from database (backward compatibility)
+    let query = db
+        .select()
+        .from(Postcard)
+        .where(eq(Postcard.isPublished, true))
+        .orderBy(desc(Postcard.date));
+
+    recentPostcards = limit ? await query.limit(limit) : await query;
+}
+
+const headline = "明信片";
+const description =
+    "这个网站主要是我在说话。明信片功能给了你一个回应的机会——哪怕只是一句话。给我寄一张明信片吧，告诉我你在想什么，你从哪里来，或者只是打个招呼说你来过。我很乐意收到你的消息。";
+---
+
+{
+    recentPostcards.length > 0 && (
+        <div>
+            {hasDescription && (
+                <>
+                    <Container class="relative">
+                        <a
+                            href="/postcards/new"
+                            class="inline-flex items-center gap-2 absolute right-0 -top-10 hover-lift"
+                        >
+                            <Icon name="new-postcard" size={100} />
+                        </a>
+                    </Container>
+
+                    <HeadlineParagraphSection
+                        title={headline}
+                        contentEnd={11}
+                        class="mb-16!"
+                    >
+                        {description}
+                    </HeadlineParagraphSection>
+                </>
+            )}
+            <PostcardsCarousel postcards={recentPostcards} hasLink={!!limit} />
+        </div>
+    )
+}

@@ -1,0 +1,34 @@
+---
+import Carousel from "../carousel/Carousel.astro";
+import CarouselItem from "../carousel/CarouselItem.astro";
+
+const photos: any[] = [];
+
+const headline = "摄影";
+
+const description =
+    "十多年来，我一直享受用相机捕捉视觉上吸引人的瞬间。";
+---
+
+<Carousel headline={headline} description={description}>
+    {
+        photos.map((photo) => (
+            <CarouselItem
+                largeSpan={4}
+                mediumSpan={5}
+                smallSpan={10}
+                paddingBottom={24}
+                paddingTop={24}
+            >
+                <img
+                    src={photo.src}
+                    alt="摄影"
+                    class="bg-neutral-100"
+                    loading="lazy"
+                    width={photo.width}
+                    height={photo.height}
+                />
+            </CarouselItem>
+        ))
+    }
+</Carousel>
