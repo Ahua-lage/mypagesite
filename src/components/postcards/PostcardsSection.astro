@@ -1,5 +1,5 @@
 ---
-import { db, Postcard, desc, eq } from "astro:db";
+import { getPostcards, type Postcard } from "@api/supabase";
 import { Icon } from "astro-icon/components";
 import PostcardsCarousel from "./PostcardsCarousel.astro";
 import Container from "../Container.astro";
@@ -7,26 +7,23 @@ import HeadlineParagraphSection from "@components/HeadlineParagraphSection.astro
 
 export interface Props {
     limit?: number | null;
-    postcards?: (typeof Postcard.$inferSelect)[];
+    postcards?: Postcard[];
     hasDescription?: boolean;
 }
 
 const { limit = null, postcards, hasDescription = true } = Astro.props;
 
-let recentPostcards;
+let recentPostcards: Postcard[] = [];
 
 // If postcards are provided as prop, use them (with optional limit)
 if (postcards) {
     recentPostcards = limit ? postcards.slice(0, limit) : postcards;
 } else {
     // Otherwise, fetch from database (backward compatibility)
-    let query = db
-        .select()
-        .from(Postcard)
-        .where(eq(Postcard.isPublished, true))
-        .orderBy(desc(Postcard.date));
-
-    recentPostcards = limit ? await query.limit(limit) : await query;
+    recentPostcards = await getPostcards({
+        limit: limit ? limit : undefined,
+        onlyPublished: true,
+    });
 }
 
 const headline = "明信片";

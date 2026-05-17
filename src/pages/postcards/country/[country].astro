@@ -1,14 +1,10 @@
 ---
-import { db, Postcard, desc, eq } from "astro:db";
+import { getPostcards } from "@api/supabase";
 import { isValidCountry, getStandardCountryName } from "@utils/countries";
 import PostcardsPage from "@components/postcards/PostcardsPage.astro";
 
 export async function getStaticPaths() {
-    const allPostcards = await db
-        .select()
-        .from(Postcard)
-        .where(eq(Postcard.isPublished, true))
-        .orderBy(desc(Postcard.date));
+    const allPostcards = await getPostcards({ onlyPublished: true });
 
     // Get unique standardized countries
     const countries = [

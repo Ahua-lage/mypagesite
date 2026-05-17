@@ -3,7 +3,7 @@
     "type": "module",
     "version": "0.0.1",
     "scripts": {
-        "sync-data": "mkdir -p public/book-covers public/bookmark-covers src/data && cp -r data/output/book-covers/* public/book-covers/ 2>/dev/null || true && cp -r data/output/bookmark-covers/* public/bookmark-covers/ 2>/dev/null || true && cp data/output/books.json src/data/books.json 2>/dev/null || true && cp data/output/bookmarks.json src/data/bookmarks.json 2>/dev/null || true",
+        "sync-data": "node scripts/sync-data.js",
         "prebuild": "npm run sync-data",
         "dev": "npm run sync-data && astro dev",
         "build": "astro build",
@@ -11,11 +11,11 @@
         "astro": "astro"
     },
     "dependencies": {
-        "@astrojs/db": "^0.18.3",
         "@astrojs/netlify": "^6.6.4",
         "@astrojs/rss": "^4.0.15",
         "@astrojs/sitemap": "^3.7.0",
         "@blossom-carousel/web": "^0.2.1",
+        "@supabase/supabase-js": "^2.105.4",
         "@tailwindcss/vite": "^4.1.17",
         "astro": "^5.16.0",
         "astro-icon": "^1.1.5",

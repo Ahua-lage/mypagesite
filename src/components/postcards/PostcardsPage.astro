@@ -1,5 +1,5 @@
 ---
-import { db, Postcard, desc, eq } from "astro:db";
+import { getPostcards, type Postcard } from "@api/supabase";
 import {
     isValidCountry,
     getStandardCountryName,
@@ -23,11 +23,7 @@ interface Props {
 const { selectedCountry } = Astro.props;
 
 // Fetch all postcards
-const allPostcards = await db
-    .select()
-    .from(Postcard)
-    .where(eq(Postcard.isPublished, true))
-    .orderBy(desc(Postcard.date));
+const allPostcards = await getPostcards({ onlyPublished: true });
 
 // Filter postcards based on selectedCountry
 const displayedPostcards = selectedCountry

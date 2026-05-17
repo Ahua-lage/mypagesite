@@ -1,5 +1,9 @@
 ---
-import { db, Postcard, eq, and, gt } from "astro:db";
+import {
+    checkDuplicatePostcard,
+    insertPostcard,
+    type NewPostcard,
+} from "@api/supabase";
 import Layout from "@layouts/Layout.astro";
 import Button from "@components/Button.astro";
 import { sendPostcardNotification } from "@utils/email";
@@ -86,27 +90,21 @@ if (Astro.request.method === "POST") {
         if (typeof author === "string" && typeof body === "string") {
             // Deduplicate: skip if identical postcard was submitted in the last 5 minutes
             const fiveMinutesAgo = new Date(Date.now() - 5 * 60 * 1000);
-            const existing = await db
-                .select({ id: Postcard.id })
-                .from(Postcard)
-                .where(
-                    and(
-                        eq(Postcard.author, author),
-                        eq(Postcard.body, body),
-                        gt(Postcard.date, fiveMinutesAgo),
-                    ),
-                );
+            const isDuplicate = await checkDuplicatePostcard(
+                author,
+                body,
+                fiveMinutesAgo,
+            );
 
-            if (existing.length > 0) {
+            if (isDuplicate) {
                 return Astro.redirect("/postcards/success");
             }
 
-            await db.insert(Postcard).values({
+            const newPostcard: NewPostcard = {
                 author,
                 body,
                 date,
                 isPublished,
-                // Store all the style values
                 marginBottom: randomMarginBottom,
                 marginRight: randomMarginRight,
                 rotation: randomRotation,
@@ -132,15 +130,19 @@ if (Astro.request.method === "POST") {
                     typeof websiteUrl === "string" && websiteUrl.trim() !== ""
                         ? websiteUrl
                         : undefined,
-                // Save Post Office Stamp styles
                 postOfficeStampTop,
                 postOfficeStampRight,
                 postOfficeStampRotation,
-                // Save Wavy Lines Stamp styles
                 wavyStampTop,
                 wavyStampRight,
                 wavyStampRotation,
-            });
+            };
+
+            const insertedPostcard = await insertPostcard(newPostcard);
+
+            if (!insertedPostcard) {
+                return Astro.redirect("/postcards/error");
+            }
 
             // Send email notification after successful database insertion
             await sendPostcardNotification({
