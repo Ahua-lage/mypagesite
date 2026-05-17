@@ -7,7 +7,6 @@ dist/
 public/book-covers/
 public/bookmark-covers/
 src/data/books.json
-src/data/bookmarks.json
 
 # dependencies
 node_modules/
