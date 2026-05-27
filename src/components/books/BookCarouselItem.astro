@@ -102,6 +102,7 @@ const authors = book.author.join(", ");
         transform-style: preserve-3d;
         transform: rotateY(-25deg);
         transition: all 0.3s;
+        aspect-ratio: 3/4;
     }
 
     a:hover .book-3d__inner {
@@ -159,7 +160,8 @@ const authors = book.author.join(", ");
     .book-3d__cover {
         display: block;
         width: 100%;
-        height: auto;
+        height: 100%;
+        object-fit: cover;
         border-radius: 0 2px 2px 0;
         transform: translateZ(var(--book-thickness));
         box-shadow: 5px 5px 20px rgba(0, 0, 0, 0.1);

@@ -8,13 +8,14 @@ interface Props {
     noBorder?: boolean;
     stickerColor: "yellow" | "blue" | "red" | "lilac";
     id: string;
+    qrcode?: string;
 }
 
-const { service, handle, url, noBorder, stickerColor, id } =
+const { service, handle, url, noBorder, stickerColor, id, qrcode } =
     Astro.props as Props;
 ---
 
-<li id={id} class="contact-item group" data-sticker-color={stickerColor}>
+<li id={id} class="contact-item group relative" data-sticker-color={stickerColor}>
     <a
         href={url}
         target="_blank"
@@ -37,4 +38,16 @@ const { service, handle, url, noBorder, stickerColor, id } =
             <Icon name="ph:arrow-up-right-bold" width={16} />
         </span>
     </a>
+    {qrcode && (
+        <div class="qrcode-container absolute left-full top-0 ml-4 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-300 z-50">
+            <div class="bg-white rounded-xl shadow-xl p-4 border border-border">
+                <img
+                    src={qrcode}
+                    alt={`${service} QR Code`}
+                    class="w-48 h-48 object-contain"
+                />
+                <p class="text-xs text-center mt-2 text-muted">扫码添加</p>
+            </div>
+        </div>
+    )}
 </li>

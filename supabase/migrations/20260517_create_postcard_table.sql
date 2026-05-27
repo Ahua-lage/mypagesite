@@ -24,6 +24,7 @@ CREATE TABLE IF NOT EXISTS "Postcard" (
   "bodyRotation" DOUBLE PRECISION,
   "stampSvg" TEXT,
   country TEXT,
+  province TEXT,
   "websiteUrl" TEXT,
   "postOfficeStampTop" DOUBLE PRECISION,
   "postOfficeStampRight" DOUBLE PRECISION,
@@ -39,6 +40,7 @@ CREATE TABLE IF NOT EXISTS "Postcard" (
 CREATE INDEX IF NOT EXISTS idx_postcard_is_published ON "Postcard"("isPublished");
 CREATE INDEX IF NOT EXISTS idx_postcard_date ON "Postcard"(date DESC);
 CREATE INDEX IF NOT EXISTS idx_postcard_country ON "Postcard"(country);
+CREATE INDEX IF NOT EXISTS idx_postcard_province ON "Postcard"(province);
 
 -- Create a trigger to auto-update updated_at
 CREATE OR REPLACE FUNCTION update_updated_at_column()
@@ -53,3 +55,20 @@ DROP TRIGGER IF EXISTS update_postcard_updated_at ON "Postcard";
 CREATE TRIGGER update_postcard_updated_at
   BEFORE UPDATE ON "Postcard"
   FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+
+-- Enable Row Level Security
+ALTER TABLE "Postcard" ENABLE ROW LEVEL SECURITY;
+
+-- Create policy to allow anyone to read published postcards
+DROP POLICY IF EXISTS "Allow read access to published postcards" ON "Postcard";
+CREATE POLICY "Allow read access to published postcards"
+  ON "Postcard"
+  FOR SELECT
+  USING ("isPublished" = true);
+
+-- Create policy to allow anyone to insert postcards
+DROP POLICY IF EXISTS "Allow insert access for postcards" ON "Postcard";
+CREATE POLICY "Allow insert access for postcards"
+  ON "Postcard"
+  FOR INSERT
+  WITH CHECK (true);

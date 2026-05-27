@@ -5,6 +5,10 @@ import {
     getStandardCountryName,
     getCountryFlag,
 } from "@utils/countries";
+import {
+    isValidProvince,
+    getStandardProvinceName,
+} from "@utils/provinces";
 import PostcardsSection from "./PostcardsSection.astro";
 import WorldMapDetail from "./WorldMapDetail.astro";
 import Layout from "@layouts/Layout.astro";
@@ -57,6 +61,23 @@ const countryCloudData = Object.entries(countryCounts).map(([name, count]) => ({
 }));
 
 const visitedCountries = countryCloudData.map((country) => country.name);
+
+const allProvinces = allPostcards
+    .map((postcard) => postcard.province)
+    .filter((province) => province !== null && province !== undefined);
+
+const provinceCounts = allProvinces.reduce(
+    (acc, province) => {
+        if (isValidProvince(province!)) {
+            const standardName = getStandardProvinceName(province!);
+            acc[standardName] = (acc[standardName] || 0) + 1;
+        }
+        return acc;
+    },
+    {} as Record<string, number>,
+);
+
+const visitedProvinces = Object.keys(provinceCounts);
 ---
 
 <Layout ogImage="/opengraph/postcards.jpg">
@@ -82,7 +103,7 @@ const visitedCountries = countryCloudData.map((country) => country.name);
     </Container>
     <PostcardsSection postcards={displayedPostcards} hasDescription={false} />
     <Container class="mt-8 md:mt-24">
-        <WorldMapDetail visitedCountries={visitedCountries} />
+        <WorldMapDetail visitedCountries={visitedCountries} visitedProvinces={visitedProvinces} />
     </Container>
     <Container class="mt-8 md:mt-24">
         <Grid class="flex items-center">

@@ -30,3 +30,12 @@ pnpm-debug.log*
 # Local Netlify folder
 .netlify
 .vercel
+
+# IDE configs
+.trae/
+
+# Sensitive files
+src/api/netease-cookie.txt
+
+# Working directories
+案例/

@@ -1,11 +1,14 @@
 ---
 import Collapsible from "@components/Collapsible.astro";
 import { COUNTRIES } from "../../utils/countries";
+import { PROVINCES } from "../../utils/provinces";
 import WorldMapSvg from "./WorldMapSvg.astro";
+import ChinaMapSvg from "./ChinaMapSvg.astro";
 
-const { visitedCountries = [] } = Astro.props;
+const { visitedCountries = [], visitedProvinces = [] } = Astro.props;
 
 const TOTAL_COUNTRIES = 195;
+const TOTAL_PROVINCES = 34;
 
 const countryFlags = Object.fromEntries(
     COUNTRIES.flatMap((country) => {
@@ -18,14 +21,43 @@ const countryFlags = Object.fromEntries(
         return entries;
     }),
 );
+
+const provinceEnMap = Object.fromEntries(
+    PROVINCES.map((p) => [p.name, p.nameEn]),
+);
 ---
 
 <Collapsible
-    title={`From where I received Postcards (${visitedCountries.length}/${TOTAL_COUNTRIES})`}
+    title={`收到的明信片 - 世界地图 (${visitedCountries.length}/${TOTAL_COUNTRIES})`}
     class="mb-12"
     contentClass="relative py-12 px-4 -mt-4"
+    id="world-map-section"
 >
-    <WorldMapSvg />
+    <div slot="title-suffix" class="flex items-center gap-2 ml-4">
+        <button
+            type="button"
+            id="switch-world-map"
+            class="map-switch-btn active text-xs px-2 py-1 rounded border border-border"
+        >
+            世界地图
+        </button>
+        <button
+            type="button"
+            id="switch-china-map"
+            class="map-switch-btn text-xs px-2 py-1 rounded border border-border"
+        >
+            中国地图
+        </button>
+    </div>
+    
+    <div id="world-map-container">
+        <WorldMapSvg />
+    </div>
+    
+    <div id="china-map-container" style="display: none;">
+        <ChinaMapSvg />
+    </div>
+    
     <div id="tooltip" class="hidden"></div>
 </Collapsible>
 
@@ -42,38 +74,114 @@ const countryFlags = Object.fromEntries(
         white-space: nowrap;
         z-index: 10;
     }
+    .map-switch-btn {
+        transition: all 0.2s ease;
+    }
+    .map-switch-btn.active {
+        background-color: var(--color-blue);
+        color: white;
+        border-color: var(--color-blue);
+    }
 </style>
 
-<script define:vars={{ visitedCountries, countryFlags }}>
+<script define:vars={{ visitedCountries, visitedProvinces, countryFlags, provinceEnMap, TOTAL_COUNTRIES, TOTAL_PROVINCES }}>
     document.addEventListener("astro:page-load", () => {
-        const countryPaths = document.querySelectorAll("svg path");
+        const worldBtn = document.getElementById("switch-world-map");
+        const chinaBtn = document.getElementById("switch-china-map");
+        const worldContainer = document.getElementById("world-map-container");
+        const chinaContainer = document.getElementById("china-map-container");
         const tooltip = document.getElementById("tooltip");
+        const section = document.getElementById("world-map-section");
+        const sectionTitle = section ? section.querySelector("summary div:first-child") : null;
 
-        if (!tooltip) return;
+        if (!tooltip || !worldBtn || !chinaBtn) return;
 
-        countryPaths.forEach((path) => {
-            let countryName =
-                path.getAttribute("name") || path.getAttribute("class");
-            if (visitedCountries.includes(countryName)) {
-                path.classList.add("active");
-            }
-
-            path.addEventListener("mouseenter", () => {
-                if (countryName) {
-                    const flag = countryFlags[countryName] || "";
-                    tooltip.innerHTML = `${flag} ${countryName}`;
-                    tooltip.classList.remove("hidden");
+        function setActiveButton(isWorld) {
+            if (isWorld) {
+                worldBtn.classList.add("active");
+                chinaBtn.classList.remove("active");
+                worldContainer.style.display = "block";
+                chinaContainer.style.display = "none";
+                if (sectionTitle) {
+                    sectionTitle.textContent = "收到的明信片 - 世界地图 (" + visitedCountries.length + "/" + TOTAL_COUNTRIES + ")";
                 }
-            });
+            } else {
+                chinaBtn.classList.add("active");
+                worldBtn.classList.remove("active");
+                chinaContainer.style.display = "block";
+                worldContainer.style.display = "none";
+                if (sectionTitle) {
+                    sectionTitle.textContent = "收到的明信片 - 中国地图 (" + visitedProvinces.length + "/" + TOTAL_PROVINCES + ")";
+                }
+            }
+        }
 
-            path.addEventListener("mousemove", (e) => {
-                tooltip.style.left = `${e.clientX + 15}px`;
-                tooltip.style.top = `${e.clientY + 15}px`;
-            });
+        function setupWorldMap() {
+            const worldSvg = worldContainer.querySelector("svg");
+            if (!worldSvg) return;
 
-            path.addEventListener("mouseleave", () => {
-                tooltip.classList.add("hidden");
+            const paths = worldSvg.querySelectorAll("path");
+            paths.forEach((path) => {
+                let countryName = path.getAttribute("name") || path.getAttribute("class");
+                if (!countryName) return;
+
+                path.classList.remove("active");
+                if (visitedCountries.includes(countryName)) {
+                    path.classList.add("active");
+                }
+
+                path.onmouseenter = () => {
+                    const flag = countryFlags[countryName] || "";
+                    tooltip.innerHTML = flag + " " + countryName;
+                    tooltip.classList.remove("hidden");
+                };
+
+                path.onmousemove = (e) => {
+                    tooltip.style.left = (e.clientX + 15) + "px";
+                    tooltip.style.top = (e.clientY + 15) + "px";
+                };
+
+                path.onmouseleave = () => {
+                    tooltip.classList.add("hidden");
+                };
             });
-        });
+        }
+
+        function setupChinaMap() {
+            const chinaSvg = chinaContainer.querySelector("svg");
+            if (!chinaSvg) return;
+
+            const paths = chinaSvg.querySelectorAll("path");
+            paths.forEach((path) => {
+                let provinceName = path.getAttribute("name") || path.getAttribute("class");
+                if (!provinceName || provinceName === "China") return;
+
+                path.classList.remove("active");
+                if (visitedProvinces.includes(provinceName)) {
+                    path.classList.add("active");
+                }
+
+                path.onmouseenter = () => {
+                    const enName = provinceEnMap[provinceName] || "";
+                    tooltip.innerHTML = provinceName + (enName ? " (" + enName + ")" : "");
+                    tooltip.classList.remove("hidden");
+                };
+
+                path.onmousemove = (e) => {
+                    tooltip.style.left = (e.clientX + 15) + "px";
+                    tooltip.style.top = (e.clientY + 15) + "px";
+                };
+
+                path.onmouseleave = () => {
+                    tooltip.classList.add("hidden");
+                };
+            });
+        }
+
+        worldBtn.addEventListener("click", () => setActiveButton(true));
+        chinaBtn.addEventListener("click", () => setActiveButton(false));
+
+        setupWorldMap();
+        setupChinaMap();
     });
 </script>

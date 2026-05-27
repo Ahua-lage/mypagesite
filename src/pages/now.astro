@@ -8,7 +8,7 @@ import StatusBadge from "@components/StatusBadge.astro";
 import { Icon } from "astro-icon/components";
 import { fetchBooks } from "@api/github-books";
 import { fetchSeries } from "@api/github-series";
-import { fetchTopAlbums, type AlbumDetails } from "@api/lastfm";
+import { fetchRecentAlbums, type AlbumDetails } from "@api/netease";
 import { scrapeLetterboxdFilms, type LetterboxdFilm } from "@utils/letterboxd";
 import Link from "@components/Link.astro";
 import BookCarouselItem from "@components/books/BookCarouselItem.astro";
@@ -40,7 +40,7 @@ try {
 let albums: AlbumDetails[] = [];
 let musicError = null;
 try {
-    albums = await fetchTopAlbums("1month", 1);
+    albums = await fetchRecentAlbums(1);
 } catch (e) {
     console.error("Failed to fetch albums:", e);
     musicError = e instanceof Error ? e.message : "Unknown error";

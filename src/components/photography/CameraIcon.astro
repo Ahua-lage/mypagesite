@@ -1,0 +1,103 @@
+---
+interface Props {
+    size?: number;
+    class?: string;
+}
+
+const { size = 32, class: className } = Astro.props;
+---
+
+<a href="/photos" class="group inline-flex items-center cursor-pointer" title="回到摄影首页">
+    <svg
+        width={size}
+        height={size}
+        viewBox="0 0 560 614"
+        fill="none"
+        xmlns="http://www.w3.org/2000/svg"
+        class:list={["camera-icon", className]}
+    >
+        <g class="camera-body">
+            <rect x="20" y="288" width="520" height="306" stroke="currentColor" stroke-width="40"/>
+            <circle cx="280" cy="441" r="153" stroke="currentColor" stroke-width="40"/>
+            <circle
+                cx="280"
+                cy="441"
+                r="64"
+                class="lens-center"
+                fill="transparent"
+                stroke="currentColor"
+                stroke-width="40"
+            />
+            <path d="M143 287.5L201 194H364L417.982 287.5" stroke="currentColor" stroke-width="40"/>
+        </g>
+
+        <g class="flash-rays opacity-0 group-hover:opacity-100">
+            <path d="M8 204H138" stroke="currentColor" stroke-width="40" class="flash-ray flash-ray-1"/>
+            <path d="M96 46L187.924 137.924" stroke="currentColor" stroke-width="40" class="flash-ray flash-ray-2"/>
+            <path d="M463.924 46L372 137.924" stroke="currentColor" stroke-width="40" class="flash-ray flash-ray-3"/>
+            <path d="M552 204H422" stroke="currentColor" stroke-width="40" class="flash-ray flash-ray-4"/>
+            <path d="M280 130V0" stroke="currentColor" stroke-width="40" class="flash-ray flash-ray-5"/>
+        </g>
+    </svg>
+</a>
+
+<style>
+    .camera-icon {
+        color: var(--color-foreground, #000);
+        transition: opacity 200ms ease;
+    }
+
+    :global([data-theme="dark"]) .camera-icon {
+        color: var(--color-foreground, #fff);
+    }
+
+    .group:hover .camera-icon {
+        opacity: 0.9;
+    }
+
+    .flash-rays {
+        transition: opacity 200ms ease;
+    }
+
+    .flash-ray {
+        stroke-dasharray: 1000;
+        stroke-dashoffset: 1000;
+        transition: stroke-dashoffset 200ms ease;
+    }
+
+    .group:hover .flash-ray {
+        stroke-dashoffset: 0;
+    }
+
+    .flash-ray-1 {
+        transition-delay: 0ms;
+    }
+
+    .flash-ray-2 {
+        transition-delay: 20ms;
+    }
+
+    .flash-ray-3 {
+        transition-delay: 40ms;
+    }
+
+    .flash-ray-4 {
+        transition-delay: 60ms;
+    }
+
+    .flash-ray-5 {
+        transition-delay: 80ms;
+    }
+
+    .lens-center {
+        transition: fill 200ms ease;
+    }
+
+    .group:hover .lens-center {
+        fill: var(--color-foreground, #000);
+    }
+
+    :global([data-theme="dark"]) .group:hover .lens-center {
+        fill: var(--color-foreground, #fff);
+    }
+</style>

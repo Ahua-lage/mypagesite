@@ -4,7 +4,6 @@ import Grid from "./Grid.astro";
 import GridItem from "./GridItem.astro";
 import WaveSticker from "./stickers/WaveSticker.astro";
 import MailSticker from "./stickers/MailSticker.astro";
-import MastodonSticker from "./stickers/MastodonSticker.astro";
 import GlassSticker from "./stickers/GlassSticker.astro";
 import DesignSticker from "./stickers/DesignSticker.astro";
 
@@ -34,13 +33,6 @@ const stickerClass =
             size={64}
             iconColor="--color-sticker-blue-dark"
             bgColor="--color-sticker-blue-light"
-        />
-        <MastodonSticker
-            id="icon-for-mastodon"
-            class={`${stickerClass} rotate-12 scale-0`}
-            size={64}
-            iconColor="--color-sticker-lilac-dark"
-            bgColor="--color-sticker-lilac-light"
         />
         <GlassSticker
             id="icon-for-glass"
@@ -72,20 +64,21 @@ const stickerClass =
                 service="微信"
                 handle="Ahuaggbs"
                 url="#"
+                qrcode="/Wechat_QRcode.jpg"
             />
             <ContactItem
                 id="glass-contact-item"
                 stickerColor="yellow"
                 service="抖音"
-                handle="1"
-                url="#"
+                handle="ahua30686"
+                url="https://www.douyin.com/user/MS4wLjABAAAAQVSknuWdf6g-I-rhZUH8i9sdXTHxP_D2PkqIaANEC0M?from_tab_name=main"
             />
             <ContactItem
                 id="github-contact-item"
                 stickerColor="red"
                 service="GitHub"
-                handle="@your-github-username"
-                url="https://github.com/your-github-username"
+                handle="@Ahua-lage"
+                url="https://github.com/Ahua-lage/mypagesite"
             />
         </ul>
     </GridItem>

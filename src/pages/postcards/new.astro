@@ -7,6 +7,7 @@ import {
 import Layout from "@layouts/Layout.astro";
 import Button from "@components/Button.astro";
 import { sendPostcardNotification } from "@utils/email";
+import { PROVINCES } from "@utils/provinces";
 
 export const prerender = false;
 
@@ -38,6 +39,7 @@ if (Astro.request.method === "POST") {
         const author = formData?.get("author");
         const body = formData?.get("body");
         const country = formData?.get("country");
+        const province = formData?.get("province");
         const websiteUrl = formData?.get("websiteUrl");
         const date = new Date();
         const isPublished = false;
@@ -126,6 +128,10 @@ if (Astro.request.method === "POST") {
                     typeof country === "string" && country.trim() !== ""
                         ? country
                         : undefined,
+                province:
+                    typeof province === "string" && province.trim() !== ""
+                        ? province
+                        : undefined,
                 websiteUrl:
                     typeof websiteUrl === "string" && websiteUrl.trim() !== ""
                         ? websiteUrl
@@ -210,11 +216,37 @@ if (Astro.request.method === "POST") {
                     id="country"
                     name="country"
                     class="border border-black-200 p-2 rounded"
-                    maxlength="18"
+                    maxlength="30"
+                    placeholder="e.g. China, US"
                 />
                 <span class="text-xs text-neutral-400 mt-1"
                     >只是用来添加一个来自你国家的可爱邮票
                 </span>
+            </div>
+
+            <div class="flex flex-col" id="province-container" style="display: none;">
+                <label for="province" class="mb-1 font-medium"
+                    >省份/地区（可选）</label
+                >
+                <select
+                    id="province"
+                    name="province"
+                    class="border border-black-200 p-2 rounded"
+                >
+                    <option value="">请选择省份/地区</option>
+                    {PROVINCES.map((province) => (
+                        <option value={province.name}>{province.name}</option>
+                    ))}
+                </select>
+                <span class="text-xs text-neutral-400 mt-1"
+                    >或自由输入：<input
+                        id="province-input"
+                        type="text"
+                        class="border border-black-200 p-1 rounded mt-1 w-full"
+                        maxlength="10"
+                        placeholder="如：北京、上海、广东"
+                    /></span
+                >
             </div>
 
             <div class="flex flex-col">
@@ -272,6 +304,55 @@ if (Astro.request.method === "POST") {
         btn.style.opacity = "0.6";
         btn.style.pointerEvents = "none";
     });
+
+    const CHINA_KEYWORDS = ['china', '中国', 'zhongguo', 'cn', '中', 'PRC'];
+    
+    function isChina(countryValue) {
+        if (!countryValue) return false;
+        const normalized = countryValue.toLowerCase().trim();
+        return CHINA_KEYWORDS.some(keyword => normalized.includes(keyword));
+    }
+
+    const countryInput = document.getElementById('country');
+    const provinceContainer = document.getElementById('province-container');
+    const provinceSelect = document.getElementById('province');
+    const provinceTextInput = document.getElementById('province-input');
+
+    function toggleProvince() {
+        if (isChina(countryInput.value)) {
+            provinceContainer.style.display = 'flex';
+        } else {
+            provinceContainer.style.display = 'none';
+            provinceSelect.value = '';
+            provinceTextInput.value = '';
+        }
+    }
+
+    countryInput.addEventListener('input', toggleProvince);
+    
+    provinceTextInput.addEventListener('input', function() {
+        if (this.value) {
+            provinceSelect.value = '';
+        }
+    });
+    
+    provinceSelect.addEventListener('change', function() {
+        if (this.value) {
+            provinceTextInput.value = '';
+        }
+    });
+
+    document.querySelector("form").addEventListener("submit", function() {
+        if (provinceTextInput.value) {
+            provinceSelect.name = '';
+            provinceTextInput.name = 'province';
+        } else {
+            provinceSelect.name = 'province';
+            provinceTextInput.name = '';
+        }
+    });
+
+    toggleProvince();
 </script>
 
 <style>

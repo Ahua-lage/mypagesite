@@ -29,13 +29,14 @@ const {
         class="flex items-center justify-between -m-2 p-4 cursor-pointer select-none focus:outline-none focus-visible:ring-2 focus-visible:ring-blue"
     >
         <div
-            class:list={[
-                uppercase && "font-mono text-xs uppercase tracking-widest",
-            ]}
-        >
-            {title}
-            <slot name="title-suffix" />
-        </div>
+        class:list={[
+            "flex items-center gap-4",
+            uppercase && "font-mono text-xs uppercase tracking-widest",
+        ]}
+    >
+        {title}
+        <slot name="title-suffix" />
+    </div>
         <div class="transition-transform duration-300 group-open:rotate-180">
             <Icon name="ph:caret-down-bold" width={16} />
         </div>

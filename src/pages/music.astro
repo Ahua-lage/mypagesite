@@ -4,44 +4,55 @@ import HeadlineParagraphSection from "@components/HeadlineParagraphSection.astro
 import Container from "@components/Container.astro";
 import Link from "@components/Link.astro";
 import AlbumCarousel from "@components/music/AlbumCarousel.astro";
-import { fetchTopAlbums, type AlbumDetails } from "@api/lastfm";
+import { fetchRecentAlbums, fetchAllTimeAlbums, fetchLikedSongs, type AlbumDetails } from "@api/netease";
 import { buildGardenNoteMap } from "@utils/gardenNotes";
 
-let monthlyAlbums: AlbumDetails[] = [];
-let yearlyAlbums: AlbumDetails[] = [];
-let overallAlbums: AlbumDetails[] = [];
+let recentAlbums: AlbumDetails[] = [];
+let allTimeAlbums: AlbumDetails[] = [];
+let likedAlbums: AlbumDetails[] = [];
 let error = null;
 
 try {
-    [monthlyAlbums, yearlyAlbums, overallAlbums] = await Promise.all([
-        fetchTopAlbums("1month", 12),
-        fetchTopAlbums("12month", 12),
-        fetchTopAlbums("overall", 12),
+    console.log("[Music Page] Starting to fetch music data...");
+    [recentAlbums, allTimeAlbums, likedAlbums] = await Promise.all([
+        fetchRecentAlbums(12),
+        fetchAllTimeAlbums(12),
+        fetchLikedSongs(12),
     ]);
+    console.log(`[Music Page] Data fetched: recent=${recentAlbums.length}, alltime=${allTimeAlbums.length}, liked=${likedAlbums.length}`);
 } catch (e) {
-    console.error("Failed to fetch Last.fm data:", e);
+    console.error("Failed to fetch Netease music data:", e);
     error = e instanceof Error ? e.message : "Unknown error occurred";
-    monthlyAlbums = [];
-    yearlyAlbums = [];
-    overallAlbums = [];
+    recentAlbums = [];
+    allTimeAlbums = [];
+    likedAlbums = [];
 }
 
 const allAlbumTitles = [
     ...new Set([
-        ...monthlyAlbums.map((a) => a.title),
-        ...yearlyAlbums.map((a) => a.title),
-        ...overallAlbums.map((a) => a.title),
+        ...recentAlbums.map((a) => a.title),
+        ...allTimeAlbums.map((a) => a.title),
+        ...likedAlbums.map((a) => a.title),
     ]),
 ];
-const gardenNoteMap = await buildGardenNoteMap("Music", allAlbumTitles);
+
+let gardenNoteMap: Map<string, { slug: string; category: string }>;
+try {
+    gardenNoteMap = await buildGardenNoteMap("Music", allAlbumTitles);
+} catch (e) {
+    console.warn("Failed to build garden note map:", e);
+    gardenNoteMap = new Map();
+}
+
+console.log(`[Music Page] Rendering - hasAlbums=${recentAlbums.length > 0 || allTimeAlbums.length > 0 || likedAlbums.length > 0}, error=${error}`);
 ---
 
 <Layout>
     <HeadlineParagraphSection title="音乐" isFirstElement>
-        自2013年以来，我一直在 <Link
-            href="https://www.last.fm/"
-            external>Last.fm</Link
-        > 上追踪我的收听习惯。数据从 Last.fm API 拉取并显示在这里，展示我过去一个月、一年和历史上收听最多的专辑。
+        我在 <Link
+            href="https://music.163.com/"
+            external>网易云音乐</Link
+        > 上收听和收藏音乐。数据从网易云音乐 API 拉取并显示在这里，展示我最近在听、累计最爱以及收藏的专辑。点击专辑即可播放。
     </HeadlineParagraphSection>
 
     {
@@ -57,17 +68,17 @@ const gardenNoteMap = await buildGardenNoteMap("Music", allAlbumTitles);
     }
 
     {
-        (monthlyAlbums.length > 0 || yearlyAlbums.length > 0 || overallAlbums.length > 0) && (
+        (recentAlbums.length > 0 || allTimeAlbums.length > 0 || likedAlbums.length > 0) && (
             <div class="flex flex-col gap-24">
-                <AlbumCarousel title="过去30天" albums={monthlyAlbums} gardenNoteMap={gardenNoteMap} />
-                <AlbumCarousel title="过去365天" albums={yearlyAlbums} gardenNoteMap={gardenNoteMap} />
-                <AlbumCarousel title="有史以来" albums={overallAlbums} gardenNoteMap={gardenNoteMap} />
+                <AlbumCarousel title="最近在听" albums={recentAlbums} gardenNoteMap={gardenNoteMap} />
+                <AlbumCarousel title="累计最爱" albums={allTimeAlbums} gardenNoteMap={gardenNoteMap} />
+                <AlbumCarousel title="我喜欢的音乐" albums={likedAlbums} gardenNoteMap={gardenNoteMap} />
             </div>
         )
     }
 
     {
-        monthlyAlbums.length === 0 && yearlyAlbums.length === 0 && overallAlbums.length === 0 && !error && (
+        recentAlbums.length === 0 && allTimeAlbums.length === 0 && likedAlbums.length === 0 && !error && (
             <Container>
                 <div class="text-center py-20">
                     <h2 class="text-xl font-medium mb-2">未找到专辑</h2>
@@ -78,4 +89,479 @@ const gardenNoteMap = await buildGardenNoteMap("Music", allAlbumTitles);
             </Container>
         )
     }
+
+    <div id="music-player-container" class="music-player-container" data-visible="false">
+        <div id="music-player"></div>
+        <div id="custom-volume-control" class="custom-volume-control">
+            <button id="custom-volume-btn" class="custom-volume-btn" title="切换静音">
+                <svg id="volume-icon-on" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon>
+                    <path d="M19.07 4.93a10 10 0 0 1 0 14.14"></path>
+                    <path d="M15.54 8.46a5 5 0 0 1 0 7.07"></path>
+                </svg>
+                <svg id="volume-icon-off" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:none">
+                    <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon>
+                    <line x1="23" y1="9" x2="17" y2="15"></line>
+                    <line x1="17" y1="9" x2="23" y2="15"></line>
+                </svg>
+            </button>
+            <input id="custom-volume-slider" type="range" min="0" max="100" value="70" class="custom-volume-slider">
+        </div>
+        <button id="music-player-close" class="music-player-close" aria-label="关闭播放器">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <line x1="18" y1="6" x2="6" y2="18"></line>
+                <line x1="6" y1="6" x2="18" y2="18"></line>
+            </svg>
+        </button>
+    </div>
 </Layout>
+
+<link rel="stylesheet" href="https://unpkg.com/aplayer@1.10.1/dist/APlayer.min.css"
+    onerror="this.onerror=null;this.href='https://cdn.jsdelivr.net/npm/aplayer@1.10.1/dist/APlayer.min.css'">
+
+<style>
+    .music-player-container {
+        position: fixed;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        z-index: 9999;
+        transform: translateY(100%);
+        transition: transform 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+        padding: 0 16px 16px;
+    }
+
+    .music-player-container[data-visible="true"] {
+        transform: translateY(0);
+    }
+
+    .music-player-container :global(.aplayer) {
+        border-radius: 12px;
+        box-shadow: 0 -4px 24px rgba(0, 0, 0, 0.15);
+        max-width: 480px;
+        margin: 0 auto;
+    }
+
+    .music-player-close {
+        position: absolute;
+        top: -36px;
+        right: 24px;
+        width: 32px;
+        height: 32px;
+        border-radius: 50%;
+        background: var(--color-surface-raised, #fff);
+        border: 1px solid rgba(0, 0, 0, 0.1);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        color: var(--color-text-secondary, #666);
+        transition: all 0.2s;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    }
+
+    .music-player-close:hover {
+        background: var(--color-surface, #f5f5f5);
+        color: var(--color-text-primary, #333);
+    }
+
+    [data-theme="dark"] .music-player-close {
+        background: #2a2a2a;
+        border-color: rgba(255, 255, 255, 0.1);
+        color: #aaa;
+    }
+
+    [data-theme="dark"] .music-player-close:hover {
+        background: #333;
+        color: #ddd;
+    }
+
+    .music-player-container :global(.aplayer-icon-volume) {
+        cursor: pointer !important;
+    }
+
+    .music-player-container :global(.aplayer-volume-wrap) {
+        display: none !important;
+    }
+
+    .custom-volume-control {
+        position: absolute;
+        top: 50%;
+        right: 60px;
+        transform: translateY(-50%);
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        z-index: 10;
+    }
+
+    .custom-volume-btn {
+        background: none;
+        border: none;
+        cursor: pointer;
+        color: var(--color-text-secondary, #666);
+        padding: 4px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 4px;
+        transition: color 0.2s, background 0.2s;
+    }
+
+    .custom-volume-btn:hover {
+        color: var(--color-text-primary, #333);
+        background: rgba(0, 0, 0, 0.05);
+    }
+
+    [data-theme="dark"] .custom-volume-btn {
+        color: #aaa;
+    }
+
+    [data-theme="dark"] .custom-volume-btn:hover {
+        color: #ddd;
+        background: rgba(255, 255, 255, 0.1);
+    }
+
+    .custom-volume-slider {
+        -webkit-appearance: none;
+        appearance: none;
+        width: 80px;
+        height: 4px;
+        border-radius: 2px;
+        background: rgba(0, 0, 0, 0.15);
+        outline: none;
+        cursor: pointer;
+        transition: opacity 0.2s;
+    }
+
+    .custom-volume-slider::-webkit-slider-thumb {
+        -webkit-appearance: none;
+        appearance: none;
+        width: 14px;
+        height: 14px;
+        border-radius: 50%;
+        background: #FFC200;
+        cursor: pointer;
+        border: 2px solid #fff;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+    }
+
+    .custom-volume-slider::-moz-range-thumb {
+        width: 14px;
+        height: 14px;
+        border-radius: 50%;
+        background: #FFC200;
+        cursor: pointer;
+        border: 2px solid #fff;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+    }
+
+    [data-theme="dark"] .custom-volume-slider {
+        background: rgba(255, 255, 255, 0.15);
+    }
+
+    [data-theme="dark"] .custom-volume-slider::-webkit-slider-thumb {
+        background: #FFC200;
+        border-color: #333;
+    }
+
+    [data-theme="dark"] .custom-volume-slider::-moz-range-thumb {
+        background: #FFC200;
+        border-color: #333;
+    }
+</style>
+
+<script is:inline>
+    (function () {
+        var pendingPlay = null;
+        var aplayerReady = false;
+
+        window.__handleAlbumClick = function (albumId, albumTitle, albumCover) {
+            albumId = parseInt(albumId || "0", 10);
+            albumTitle = albumTitle || "";
+            albumCover = albumCover || "";
+            console.log("[MusicPlayer] Album clicked:", albumId, albumTitle);
+
+            if (aplayerReady) {
+                window.__playAlbum(albumId, albumTitle, albumCover);
+            } else {
+                console.log("[MusicPlayer] APlayer not ready, queuing...");
+                pendingPlay = { albumId: albumId, albumTitle: albumTitle, albumCover: albumCover };
+            }
+        };
+
+        var cdnList = [
+            "https://unpkg.com/aplayer@1.10.1/dist/APlayer.min.js",
+            "https://cdn.jsdelivr.net/npm/aplayer@1.10.1/dist/APlayer.min.js",
+            "https://cdnjs.cloudflare.com/ajax/libs/aplayer/1.10.1/APlayer.min.js"
+        ];
+
+        function loadScriptWithFallback(urls, index, callback) {
+            if (index >= urls.length) {
+                console.error("[MusicPlayer] All CDN sources failed to load");
+                return;
+            }
+            var script = document.createElement("script");
+            script.src = urls[index];
+            script.onload = function () {
+                console.log("[MusicPlayer] APlayer loaded from:", urls[index]);
+                callback();
+            };
+            script.onerror = function () {
+                console.warn("[MusicPlayer] CDN failed:", urls[index]);
+                loadScriptWithFallback(urls, index + 1, callback);
+            };
+            document.head.appendChild(script);
+        }
+
+        loadScriptWithFallback(cdnList, 0, function () {
+            initMusicPlayer();
+        });
+
+        function initMusicPlayer() {
+            var container = document.getElementById("music-player-container");
+            var playerEl = document.getElementById("music-player");
+            var closeBtn = document.getElementById("music-player-close");
+
+            if (!container || !playerEl || !closeBtn) {
+                console.error("[MusicPlayer] DOM elements not found");
+                return;
+            }
+
+            var aplayer = null;
+            var loading = false;
+
+            var volumeState = {
+                volume: 0.7,
+                muted: false,
+                lastVolume: 0.7
+            };
+
+            var customVolumeBtn = document.getElementById("custom-volume-btn");
+            var customVolumeSlider = document.getElementById("custom-volume-slider");
+            var volumeIconOn = document.getElementById("volume-icon-on");
+            var volumeIconOff = document.getElementById("volume-icon-off");
+
+            function updateVolumeIcon() {
+                if (volumeState.muted || volumeState.volume === 0) {
+                    if (volumeIconOn) volumeIconOn.style.display = 'none';
+                    if (volumeIconOff) volumeIconOff.style.display = 'block';
+                } else {
+                    if (volumeIconOn) volumeIconOn.style.display = 'block';
+                    if (volumeIconOff) volumeIconOff.style.display = 'none';
+                }
+            }
+
+            function updateVolumeSlider() {
+                if (customVolumeSlider) {
+                    customVolumeSlider.value = volumeState.muted ? 0 : Math.round(volumeState.volume * 100);
+                }
+            }
+
+            if (customVolumeBtn) {
+                customVolumeBtn.addEventListener('click', function() {
+                    if (!aplayer || !aplayer.audio) return;
+                    
+                    if (volumeState.muted) {
+                        volumeState.muted = false;
+                        volumeState.volume = volumeState.lastVolume;
+                        aplayer.audio.muted = false;
+                        aplayer.audio.volume = volumeState.volume;
+                    } else {
+                        volumeState.lastVolume = volumeState.volume;
+                        volumeState.muted = true;
+                        aplayer.audio.muted = true;
+                    }
+                    
+                    updateVolumeIcon();
+                    updateVolumeSlider();
+                    console.log("[MusicPlayer] Toggle mute:", volumeState.muted, "volume:", volumeState.volume);
+                });
+            }
+
+            if (customVolumeSlider) {
+                customVolumeSlider.addEventListener('input', function() {
+                    if (!aplayer || !aplayer.audio) return;
+                    
+                    var percent = parseInt(this.value, 10) / 100;
+                    volumeState.volume = percent;
+                    volumeState.muted = false;
+                    volumeState.lastVolume = percent > 0 ? percent : volumeState.lastVolume;
+                    
+                    aplayer.audio.muted = false;
+                    aplayer.audio.volume = percent;
+                    
+                    updateVolumeIcon();
+                    console.log("[MusicPlayer] Volume slider:", percent);
+                });
+            }
+
+            function showPlayer() {
+                container.setAttribute("data-visible", "true");
+            }
+
+            function hidePlayer() {
+                container.setAttribute("data-visible", "false");
+                if (aplayer) {
+                    aplayer.destroy();
+                    aplayer = null;
+                }
+            }
+
+            closeBtn.addEventListener("click", hidePlayer);
+
+            async function fetchAlbumSongs(albumId) {
+                var res = await fetch("/api/album-songs", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ id: albumId })
+                });
+                if (!res.ok) throw new Error("Failed to fetch album songs");
+                return res.json();
+            }
+
+            async function fetchSongUrl(songId) {
+                var res = await fetch("/api/song-url", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ id: songId })
+                });
+                if (!res.ok) return null;
+                var data = await res.json();
+                return data.url;
+            }
+
+            async function playAlbum(albumId, albumTitle, albumCover) {
+                if (loading) return;
+                loading = true;
+                console.log("[MusicPlayer] Playing album:", albumId, albumTitle);
+
+                try {
+                    var result = await fetchAlbumSongs(albumId);
+                    var songs = result.songs;
+                    console.log("[MusicPlayer] Fetched songs:", songs ? songs.length : 0);
+
+                    if (!songs || songs.length === 0) {
+                        console.warn("[MusicPlayer] No songs found for album:", albumId);
+                        return;
+                    }
+
+                    var songSlice = songs.slice(0, 20);
+                    var fetchTasks = songSlice.map(function (song) {
+                        return fetchSongUrl(song.id);
+                    });
+                    var urls = await Promise.all(fetchTasks);
+
+                    var audioList = [];
+                    for (var j = 0; j < songSlice.length; j++) {
+                        if (urls[j]) {
+                            audioList.push({
+                                name: songSlice[j].name,
+                                artist: songSlice[j].artist,
+                                url: urls[j],
+                                cover: songSlice[j].cover || albumCover,
+                            });
+                        }
+                    }
+
+                    console.log("[MusicPlayer] Playable songs:", audioList.length);
+                    if (audioList.length > 0) {
+                        console.log("[MusicPlayer] First song:", audioList[0]);
+                    }
+
+                    if (audioList.length === 0) {
+                        console.warn("[MusicPlayer] No playable songs for album:", albumId);
+                        return;
+                    }
+
+                    if (aplayer) {
+                        aplayer.destroy();
+                    }
+
+                    console.log("[MusicPlayer] Creating APlayer with:", audioList.length, "songs");
+                    aplayer = new APlayer({
+                        container: playerEl,
+                        mini: false,
+                        autoplay: false,
+                        theme: "#FFC200",
+                        loop: "all",
+                        order: "list",
+                        preload: "auto",
+                        volume: 0.7,
+                        mutex: true,
+                        listFolded: false,
+                        listMaxHeight: "200px",
+                        audio: audioList,
+                    });
+
+                    aplayer.on('play', function() {
+                        console.log("[MusicPlayer] APlayer play event triggered");
+                        if (aplayer.audio && aplayer.audio.muted) {
+                            aplayer.audio.muted = false;
+                            console.log("[MusicPlayer] Unmuted audio");
+                        }
+                    });
+
+                    aplayer.on('pause', function() {
+                        console.log("[MusicPlayer] APlayer pause event triggered");
+                    });
+
+                    aplayer.on('error', function(err) {
+                        console.error("[MusicPlayer] APlayer error:", err);
+                        if (aplayer && aplayer.audio) {
+                            console.error("[MusicPlayer] Audio src:", aplayer.audio.src);
+                            console.error("[MusicPlayer] Audio error code:", aplayer.audio.error ? aplayer.audio.error.code : 'N/A');
+                            console.error("[MusicPlayer] Network state:", aplayer.audio.networkState);
+                        }
+                    });
+
+                    aplayer.on('loadeddata', function() {
+                        console.log("[MusicPlayer] APlayer loadeddata event");
+                    });
+
+                    if (aplayer.audio) {
+                        aplayer.audio.volume = volumeState.volume;
+                        aplayer.audio.muted = volumeState.muted;
+                    }
+                    updateVolumeIcon();
+                    updateVolumeSlider();
+
+                    showPlayer();
+
+                    setTimeout(function() {
+                        try {
+                            aplayer.play();
+                            console.log("[MusicPlayer] Manual play triggered");
+                            
+                            setTimeout(function() {
+                                if (aplayer && aplayer.audio) {
+                                    console.log("[MusicPlayer] Audio paused:", aplayer.audio.paused);
+                                    console.log("[MusicPlayer] Audio muted:", aplayer.audio.muted);
+                                    console.log("[MusicPlayer] Audio volume:", aplayer.audio.volume);
+                                    console.log("[MusicPlayer] Audio duration:", aplayer.audio.duration);
+                                    console.log("[MusicPlayer] Audio currentTime:", aplayer.audio.currentTime);
+                                }
+                            }, 500);
+                        } catch (e) {
+                            console.warn("[MusicPlayer] Auto-play blocked, user needs to click play button");
+                        }
+                    }, 300);
+                } catch (error) {
+                    console.error("[MusicPlayer] Failed to play album:", error);
+                } finally {
+                    loading = false;
+                }
+            }
+
+            window.__playAlbum = playAlbum;
+            aplayerReady = true;
+            console.log("[MusicPlayer] Ready!");
+
+            if (pendingPlay) {
+                console.log("[MusicPlayer] Executing pending play");
+                playAlbum(pendingPlay.albumId, pendingPlay.albumTitle, pendingPlay.albumCover);
+                pendingPlay = null;
+            }
+        }
+    })();
+</script>

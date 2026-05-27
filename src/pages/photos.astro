@@ -1,0 +1,240 @@
+---
+import "../styles/global.css";
+import { Image } from "astro:assets";
+import { Icon } from "astro-icon/components";
+import CameraIcon from "@components/photography/CameraIcon.astro";
+
+import Photo02 from "@assets/landingpage-photos/02.jpg";
+import Photo07 from "@assets/landingpage-photos/07.jpg";
+import Photo12 from "@assets/landingpage-photos/12.jpg";
+import Photo13 from "@assets/landingpage-photos/13.jpg";
+import Photo17 from "@assets/landingpage-photos/17.png";
+import Photo18 from "@assets/landingpage-photos/18.jpg";
+import Photo19 from "@assets/landingpage-photos/19.jpg";
+
+const photos = [
+    { src: Photo02, date: "02/05/2024" },
+    { src: Photo07, date: "07/08/2024" },
+    { src: Photo12, date: "12/11/2024" },
+    { src: Photo13, date: "13/01/2025" },
+    { src: Photo17, date: "17/03/2025" },
+    { src: Photo18, date: "20/05/2026" },
+    { src: Photo19, date: "22/05/2026" },
+];
+---
+
+<!doctype html>
+<html lang="zh-CN">
+    <head>
+        <meta charset="utf-8" />
+        <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+        <meta name="viewport" content="width=device-width" />
+        <meta name="theme-color" content="#FFC200" />
+        <meta name="generator" content={Astro.generator} />
+        <title>摄影 | Ahua</title>
+        <meta name="description" content="Ahua 的摄影作品集" />
+        <script is:inline>
+            document.documentElement.classList.add("js");
+            (function () {
+                const theme = localStorage.getItem("theme");
+                if (theme === "dark") {
+                    document.documentElement.dataset.theme = theme;
+                }
+            })();
+        </script>
+    </head>
+    <body class="photos-page bg-background text-foreground">
+        <nav class="nav-bar">
+            <div class="nav-content">
+                <CameraIcon size={32} />
+                <div class="nav-links">
+                    <a href="#calendar" class="nav-link">日历</a>
+                    <a href="#collections" class="nav-link">作品集</a>
+                    <a href="#equipment" class="nav-link">器材</a>
+                </div>
+            </div>
+        </nav>
+
+        <div class="main-content">
+            <header class="hero-section">
+                <p class="hero-text">
+                    嗨，我是
+                    <a href="/" class="name-link">Ahua</a>。
+                    我喜欢拍照。这里是我收集和分享照片的地方。
+                </p>
+            </header>
+
+            <main class="photos-section">
+                <div class="photos-grid">
+                    {photos.map((photo) => (
+                        <div class="photo-item">
+                            <div class="photo-image-wrapper">
+                                <Image
+                                    src={photo.src}
+                                    alt="Ahua 的摄影作品"
+                                    class="w-full h-auto"
+                                    loading="lazy"
+                                    format="webp"
+                                    quality={85}
+                                />
+                            </div>
+                            <span class="photo-date">{photo.date}</span>
+                        </div>
+                    ))}
+                </div>
+            </main>
+
+            <footer class="page-footer">
+                <p>摄影作品 by <a href="/" class="footer-link">Ahua</a></p>
+            </footer>
+        </div>
+    </body>
+</html>
+
+<style>
+    .nav-bar {
+        position: sticky;
+        top: 0;
+        z-index: 100;
+        background: var(--color-background, #fff);
+        border-bottom: 1px solid var(--color-border, #eee);
+        padding: 16px 0;
+    }
+
+    .nav-content {
+        max-widtH: 64rem;
+        margin: 0 auto;
+        padding: 0 16px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+
+    .logo-link {
+        color: var(--color-foreground, #000);
+        transition: color 0.2s ease;
+    }
+
+    .nav-links {
+        display: flex;
+        gap: 24px;
+    }
+
+    .nav-link {
+        font-size: 0.875rem;
+        font-family: monospace;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        color: var(--color-foreground, #000);
+        text-decoration: none;
+        transition: color 0.2s ease;
+    }
+
+    .nav-link:hover {
+        color: var(--color-muted, #888);
+    }
+
+    .main-content {
+        max-width: 64rem;
+        margin: 0 auto;
+        padding: 0 16px;
+    }
+
+    .hero-section {
+        padding: 64px 0 48px;
+    }
+
+    .hero-text {
+        font-size: 1.25rem;
+        line-height: 1.6;
+        color: var(--color-foreground, #000);
+        margin: 0;
+    }
+
+    @media (min-width: 768px) {
+        .hero-text {
+            font-size: 1.5rem;
+        }
+    }
+
+    .name-link {
+        font-weight: 600;
+        text-decoration: underline;
+        text-underline-offset: 4px;
+        color: var(--color-foreground, #000);
+        transition: color 0.2s ease;
+    }
+
+    .name-link:hover {
+        color: var(--color-muted, #888);
+    }
+
+    .photos-grid {
+        display: grid;
+        grid-template-columns: repeat(1, 1fr);
+        gap: 12px;
+    }
+
+    @media (min-width: 640px) {
+        .photos-grid {
+            grid-template-columns: repeat(2, 1fr);
+        }
+    }
+
+    @media (min-width: 1024px) {
+        .photos-grid {
+            grid-template-columns: repeat(3, 1fr);
+        }
+    }
+
+    .photo-item {
+        position: relative;
+    }
+
+    .photo-image-wrapper {
+        aspect-ratio: 4/5;
+        overflow: hidden;
+    }
+
+    .photo-item img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        transition: transform 0.3s ease;
+    }
+
+    .photo-item:hover img {
+        transform: scale(1.02);
+    }
+
+    .photo-date {
+        display: block;
+        font-family: monospace;
+        font-size: 0.75rem;
+        color: var(--color-muted, #888);
+        margin-top: 0.5rem;
+    }
+
+    .page-footer {
+        padding: 32px 0 48px;
+        border-top: 1px solid var(--color-border, #eee);
+        margin-top: 32px;
+    }
+
+    .page-footer p {
+        font-size: 0.875rem;
+        color: var(--color-muted, #888);
+        margin: 0;
+    }
+
+    .footer-link {
+        color: var(--color-foreground, #000);
+        text-decoration: underline;
+        text-underline-offset: 2px;
+        transition: color 0.2s ease;
+    }
+
+    .footer-link:hover {
+        color: var(--color-muted, #888);
+    }
+</style>

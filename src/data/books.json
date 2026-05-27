@@ -1,7 +1,20 @@
 {
-  "lastUpdated": "2026-05-17T00:00:00Z",
-  "count": 0,
+  "lastUpdated": "2026-05-22T00:00:00Z",
+  "count": 1,
   "aktiv": [],
   "merkliste": [],
-  "abgeschlossen": {}
+  "abgeschlossen": {
+    "2026": [
+      {
+        "title": "小狗钱钱",
+        "author": ["(德)博多·舍费尔"],
+        "pages": 301,
+        "cover": "book-covers/小狗钱钱.jpg",
+        "rating": 5,
+        "finished": "2026-05-22",
+        "genre": ["理财", "个人成长"],
+        "published": "2000"
+      }
+    ]
+  }
 }

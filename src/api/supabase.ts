@@ -31,6 +31,7 @@ export interface Postcard {
   bodyRotation?: number | null;
   stampSvg?: string | null;
   country?: string | null;
+  province?: string | null;
   websiteUrl?: string | null;
   postOfficeStampTop?: number | null;
   postOfficeStampRight?: number | null;
@@ -63,6 +64,7 @@ export interface NewPostcard {
   bodyRotation?: number;
   stampSvg?: string;
   country?: string;
+  province?: string;
   websiteUrl?: string;
   postOfficeStampTop?: number;
   postOfficeStampRight?: number;
@@ -74,10 +76,11 @@ export interface NewPostcard {
 
 let supabaseInstance: SupabaseClient | null = null;
 
-export function getSupabaseClient(): SupabaseClient {
+export function getSupabaseClient(): SupabaseClient | null {
   if (!supabaseInstance) {
     if (!SUPABASE_URL || !SUPABASE_ANON_KEY) {
-      throw new Error("Supabase environment variables are not configured");
+      console.warn("Supabase environment variables are not configured, returning null");
+      return null;
     }
     supabaseInstance = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
       auth: {
@@ -93,6 +96,11 @@ export async function getPostcards(
 ): Promise<Postcard[]> {
   const { limit, country, onlyPublished = true } = options;
   const supabase = getSupabaseClient();
+
+  if (!supabase) {
+    console.warn("No Supabase client available, returning empty postcards");
+    return [];
+  }
 
   let query = supabase.from("Postcard").select("*");
 
@@ -125,6 +133,11 @@ export async function insertPostcard(
 ): Promise<Postcard | null> {
   const supabase = getSupabaseClient();
 
+  if (!supabase) {
+    console.warn("No Supabase client available, cannot insert postcard");
+    return null;
+  }
+
   const { data, error } = await supabase
     .from("Postcard")
     .insert({
@@ -151,6 +164,11 @@ export async function checkDuplicatePostcard(
   sinceDate: Date,
 ): Promise<boolean> {
   const supabase = getSupabaseClient();
+
+  if (!supabase) {
+    console.warn("No Supabase client available, skipping duplicate check");
+    return false;
+  }
 
   const { data, error } = await supabase
     .from("Postcard")

@@ -1,16 +1,33 @@
 ---
+import { Image } from "astro:assets";
 import Carousel from "../carousel/Carousel.astro";
 import CarouselItem from "../carousel/CarouselItem.astro";
 
-const photos: any[] = [];
+import Photo02 from "@assets/landingpage-photos/02.jpg";
+import Photo07 from "@assets/landingpage-photos/07.jpg";
+import Photo12 from "@assets/landingpage-photos/12.jpg";
+import Photo13 from "@assets/landingpage-photos/13.jpg";
+import Photo17 from "@assets/landingpage-photos/17.png";
+
+const photos = [
+    Photo02,
+    Photo07,
+    Photo12,
+    Photo13,
+    Photo17,
+];
 
 const headline = "摄影";
 
 const description =
-    "十多年来，我一直享受用相机捕捉视觉上吸引人的瞬间。";
+    "初学中，还在进步......";
 ---
 
-<Carousel headline={headline} description={description}>
+<Carousel
+    headline={headline}
+    description={description}
+    link={{ href: "/photos", text: "查看所有照片 →", external: true }}
+>
     {
         photos.map((photo) => (
             <CarouselItem
@@ -20,13 +37,13 @@ const description =
                 paddingBottom={24}
                 paddingTop={24}
             >
-                <img
-                    src={photo.src}
+                <Image
+                    src={photo}
                     alt="摄影"
                     class="bg-neutral-100"
                     loading="lazy"
-                    width={photo.width}
-                    height={photo.height}
+                    format="webp"
+                    quality={80}
                 />
             </CarouselItem>
         ))
