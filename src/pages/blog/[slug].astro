@@ -5,7 +5,7 @@ import "../../styles/sidenotes.css";
 import "../../styles/blog-styles.css";
 import TableOfContents from "@components/TableOfContents.astro";
 import { extractHeadings } from "../../utils/markdown";
-import MastodonStats from "@components/blog/MastodonStats.astro";
+import ArticleSourceCard from "@components/blog/ArticleSourceCard.astro";
 import Divider from "@components/Divider.astro";
 import Container from "@components/Container.astro";
 
@@ -43,17 +43,29 @@ export async function getStaticPaths() {
     );
 }
 
-// Get the blog post for this page
 const { entry, headings, previousPost, nextPost } = Astro.props;
 const { Content } = await entry.render();
 
-// Format date (DD / MM / YYYY)
 const formatDate = (date: Date) => {
     const day = String(date.getDate()).padStart(2, "0");
     const month = String(date.getMonth() + 1).padStart(2, "0");
     const year = date.getFullYear();
     return `${day} / ${month} / ${year}`;
 };
+
+const articleSource = entry.data.wechatUrl
+    ? {
+          platform: "wechat" as const,
+          url: entry.data.wechatUrl,
+          stats: entry.data.wechatStats,
+      }
+    : entry.data.xiaohongshuUrl
+      ? {
+            platform: "xiaohongshu" as const,
+            url: entry.data.xiaohongshuUrl,
+            stats: entry.data.xiaohongshuStats,
+        }
+      : null;
 ---
 
 <Layout
@@ -83,7 +95,6 @@ const formatDate = (date: Date) => {
                     }
                 </h1>
 
-                <!-- Metadata -->
                 <div
                     class="mt-6 flex flex-wrap gap-4 font-mono text-sm text-muted"
                 >
@@ -93,7 +104,7 @@ const formatDate = (date: Date) => {
                     {
                         entry.data.category && (
                             <>
-                                <span>·</span>
+                                <span>/</span>
                                 <a
                                     href={`/blog/category/${entry.data.category}`}
                                     class="transition-colors hover:text-foreground"
@@ -108,7 +119,6 @@ const formatDate = (date: Date) => {
                 <Divider />
             </div>
 
-            <!-- Table of Contents -->
             {
                 headings.length > 0 && (
                     <div class="mx-auto mb-8 max-w-[65ch]">
@@ -117,21 +127,22 @@ const formatDate = (date: Date) => {
                 )
             }
 
-            <!-- Markdown content with sidenotes support -->
             <div class="markdown prose prose-lg">
                 <Content />
             </div>
 
-            <!-- Mastodon Stats -->
             {
-                entry.data.mastodonId && (
+                articleSource && (
                     <div class="mx-auto mt-16 max-w-[65ch]">
-                        <MastodonStats statusId={entry.data.mastodonId} />
+                        <ArticleSourceCard
+                            platform={articleSource.platform}
+                            url={articleSource.url}
+                            stats={articleSource.stats}
+                        />
                     </div>
                 )
             }
 
-            <!-- Previous/Next Navigation -->
             {
                 (previousPost || nextPost) && (
                     <div class="mx-auto mt-16 flex max-w-[65ch] gap-4 border-t border-border pt-8">
@@ -141,7 +152,7 @@ const formatDate = (date: Date) => {
                                 class="flex-1 rounded-lg p-4 transition-colors hover:bg-surface"
                             >
                                 <span class="text-sm text-muted">
-                                    ← Previous
+                                    ← 上一篇
                                 </span>
                                 <p class="mt-1 font-medium">
                                     {previousPost.data.title}
@@ -167,7 +178,6 @@ const formatDate = (date: Date) => {
 </Layout>
 
 <style>
-    /* Markdown prose styling for blog posts */
     .markdown {
         max-width: 65ch;
         margin: 0 auto;
@@ -217,7 +227,6 @@ const formatDate = (date: Date) => {
         color: var(--color-muted);
     }
 
-    /* Code block styling */
     .markdown :global(pre) {
         background: var(--color-surface);
         border: 1px solid var(--color-border);
@@ -237,7 +246,6 @@ const formatDate = (date: Date) => {
         border-radius: 3px;
     }
 
-    /* Blockquote styling */
     .markdown :global(blockquote) {
         border-left: 3px solid var(--color-border);
         padding-left: 1rem;
@@ -249,9 +257,7 @@ const formatDate = (date: Date) => {
 <script src="../../scripts/sidenotes.js"></script>
 
 <script>
-    // Keyboard navigation for prev/next posts
     function handleKeyboardNavigation(e: KeyboardEvent) {
-        // Don't trigger if user is typing in an input
         if (
             e.target instanceof HTMLInputElement ||
             e.target instanceof HTMLTextAreaElement

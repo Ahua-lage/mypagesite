@@ -26,6 +26,26 @@ const blogCollection = defineCollection({
             date: z.date(),
             category: z.string().optional(),
             mastodonId: z.string().optional(),
+            wechatUrl: z.string().url().optional(),
+            wechatStats: z
+                .object({
+                    reads: z.union([z.number(), z.string()]).optional(),
+                    likes: z.union([z.number(), z.string()]).optional(),
+                    shares: z.union([z.number(), z.string()]).optional(),
+                    comments: z.union([z.number(), z.string()]).optional(),
+                    collections: z.union([z.number(), z.string()]).optional(),
+                })
+                .optional(),
+            xiaohongshuUrl: z.string().url().optional(),
+            xiaohongshuStats: z
+                .object({
+                    reads: z.union([z.number(), z.string()]).optional(),
+                    likes: z.union([z.number(), z.string()]).optional(),
+                    shares: z.union([z.number(), z.string()]).optional(),
+                    comments: z.union([z.number(), z.string()]).optional(),
+                    collections: z.union([z.number(), z.string()]).optional(),
+                })
+                .optional(),
             ogImageName: z.string().optional(),
         }),
 });

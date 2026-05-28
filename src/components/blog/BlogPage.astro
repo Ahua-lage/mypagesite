@@ -16,12 +16,10 @@ interface Props {
 
 const { posts, allPosts, selectedCategory } = Astro.props;
 
-// Sort posts by date
 const sortedPosts = [...posts].sort(
-    (a, b) => b.data.date.valueOf() - a.data.date.valueOf()
+    (a, b) => b.data.date.valueOf() - a.data.date.valueOf(),
 );
 
-// Group by year
 const postsByYear = sortedPosts.reduce(
     (acc, post) => {
         const year = post.data.date.getFullYear();
@@ -29,25 +27,24 @@ const postsByYear = sortedPosts.reduce(
         acc[year].push(post);
         return acc;
     },
-    {} as Record<number, typeof sortedPosts>
+    {} as Record<number, typeof sortedPosts>,
 );
 
 const years = Object.keys(postsByYear)
     .map(Number)
     .sort((a, b) => b - a);
 
-// Generate category counts for the tag cloud
 const allCategories = allPosts.flatMap((post) => post.data.category || []);
 const categoryCounts = allCategories.reduce(
     (acc, cat) => {
         acc[cat] = (acc[cat] || 0) + 1;
         return acc;
     },
-    {} as Record<string, number>
+    {} as Record<string, number>,
 );
 
 const categoryCloudData = Object.entries(categoryCounts).map(
-    ([name, count]) => ({ name, count })
+    ([name, count]) => ({ name, count }),
 );
 ---
 
@@ -56,7 +53,7 @@ const categoryCloudData = Object.entries(categoryCounts).map(
         <Grid>
             <GridItem colSpan={12}>
                 <HeadlineParagraphSection title="博客" isFirstElement>
-                    多年来一直想要有一个博客，现在我终于开始动笔了（或者说敲键盘）。我花了一些时间才鼓起勇气，但现在我很高兴能探索各种我感兴趣的话题。欢迎随时提出你的反馈和观点，我期待着这些文章带来的对话。
+                    这里会收纳我从微信公众号同步过来的文章。你可以在站内阅读，也可以在文章末尾跳转到微信原文继续收藏、转发或留言。
                 </HeadlineParagraphSection>
 
                 {allPosts.length > 0 && (
@@ -79,11 +76,13 @@ const categoryCloudData = Object.entries(categoryCounts).map(
                             />
                         ))
                     ) : (
-                        <div class="text-center py-20">
-                            <div class="text-6xl mb-4">📝</div>
-                            <h2 class="text-xl font-medium mb-2">暂无博客文章</h2>
+                        <div class="py-20 text-center">
+                            <div class="mb-4 text-6xl">📄</div>
+                            <h2 class="mb-2 text-xl font-medium">
+                                暂无博客文章
+                            </h2>
                             <p class="text-neutral-600">
-                                稍后再来查看新内容。
+                                添加微信公众号文章后，它们会出现在这里。
                             </p>
                         </div>
                     )}

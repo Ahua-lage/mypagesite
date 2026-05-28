@@ -1,9 +1,9 @@
 name: Daily rebuild
 
 on:
-    schedule:
-        - cron: "0 5 * * *" # 6:00 AM CET / 7:00 AM CEST
-    workflow_dispatch: # manual trigger button in GitHub UI
+    push:
+        branches:
+            - never-trigger-this-workflow
 
 jobs:
     rebuild:

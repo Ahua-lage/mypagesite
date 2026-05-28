@@ -1,0 +1,98 @@
+---
+import { Icon } from "astro-icon/components";
+
+type SourcePlatform = "wechat" | "xiaohongshu";
+
+type SourceStats = {
+    reads?: number | string;
+    likes?: number | string;
+    shares?: number | string;
+    comments?: number | string;
+    collections?: number | string;
+};
+
+interface Props {
+    platform: SourcePlatform;
+    url: string;
+    stats?: SourceStats;
+}
+
+const { platform, url, stats } = Astro.props;
+
+const platformConfig = {
+    wechat: {
+        name: "微信公众号",
+        icon: "ph:wechat-logo",
+        title: "这篇文章首发在微信公众号",
+        description: "如果你想收藏、转发或留言，可以跳转到微信原文继续阅读。",
+        srLabel: "打开微信公众号原文",
+        hoverClass: "hover:bg-lilac",
+    },
+    xiaohongshu: {
+        name: "小红书",
+        icon: "ph:notebook",
+        title: "这篇文章也发布在小红书",
+        description: "如果你更常用小红书，可以跳转到那里收藏或互动。",
+        srLabel: "打开小红书原文",
+        hoverClass: "hover:bg-lilac",
+    },
+} as const;
+
+const config = platformConfig[platform];
+
+const statItems = [
+    { label: "阅读", value: stats?.reads, icon: "ph:book-open-text-bold" },
+    { label: "在看", value: stats?.likes, icon: "ph:heart-bold" },
+    { label: "转发", value: stats?.shares, icon: "ph:share-fat-bold" },
+    { label: "留言", value: stats?.comments, icon: "ph:chat-circle-text-bold" },
+    { label: "收藏", value: stats?.collections, icon: "ph:bookmark-simple-bold" },
+].filter((item) => item.value !== undefined && item.value !== null);
+---
+
+<div
+    class:list={[
+        "group relative flex cursor-pointer flex-col rounded-lg bg-surface p-8 font-mono transition-all hover:rotate-1 hover:scale-105 md:flex-row md:items-end",
+        config.hoverClass,
+    ]}
+>
+    <div class="order-2 mt-4 h-full text-base leading-7 md:order-1 md:mt-0 md:w-2/3">
+        <div class="mb-3 flex items-center gap-2 text-sm text-text-secondary">
+            <Icon name={config.icon} size={20} />
+            <span>{config.name}</span>
+        </div>
+        <strong class="block font-sans text-lg">{config.title}</strong>
+        <span class="mt-2 block text-text-secondary">
+            {config.description}
+        </span>
+    </div>
+    <div
+        class="order-1 flex flex-col justify-between gap-6 md:order-2 md:min-h-[120px] md:w-1/3 md:items-end"
+    >
+        <div
+            class="self-end text-text-secondary transition-all group-hover:-translate-y-2 group-hover:translate-x-2 group-hover:text-lilac-dark"
+        >
+            <Icon name="ph:arrow-up-right-bold" size={20} />
+        </div>
+        {
+            statItems.length > 0 && (
+                <ul class="list-style-none m-0! flex flex-wrap justify-end gap-4 p-0! text-sm">
+                    {statItems.map((item) => (
+                        <li class="m-0! flex items-center gap-1 p-0!">
+                            <Icon name={item.icon} size={18} />
+                            <span class="sr-only">{item.label}</span>
+                            {item.value}
+                        </li>
+                    ))}
+                </ul>
+            )
+        }
+    </div>
+    <a
+        href={url}
+        target="_blank"
+        rel="noopener noreferrer"
+        class="absolute bottom-0 left-0 right-0 top-0 h-full w-full"
+    >
+        <span class="sr-only">{config.srLabel}</span>
+    </a>
+</div>

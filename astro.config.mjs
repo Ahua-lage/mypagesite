@@ -3,7 +3,6 @@ import { defineConfig } from "astro/config";
 import icon from "astro-icon";
 import tailwindcss from "@tailwindcss/vite";
 import { fileURLToPath } from "url";
-import netlify from "@astrojs/netlify";
 
 import sitemap from "@astrojs/sitemap";
 
@@ -44,7 +43,7 @@ export default defineConfig({
         },
     },
 
-    adapter: netlify(),
+    output: "server",
     security: {
         checkOrigin: false,
     },
