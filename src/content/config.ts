@@ -25,6 +25,7 @@ const blogCollection = defineCollection({
             description: z.string().optional(),
             date: z.date(),
             category: z.string().optional(),
+            draft: z.boolean().optional().default(false),
             mastodonId: z.string().optional(),
             wechatUrl: z.string().url().optional(),
             wechatStats: z

@@ -9,9 +9,11 @@ import ArticleSourceCard from "@components/blog/ArticleSourceCard.astro";
 import Divider from "@components/Divider.astro";
 import Container from "@components/Container.astro";
 
-// Generate static paths for all blog posts
+export const prerender = true;
+
+// Generate static paths for all blog posts (excluding drafts)
 export async function getStaticPaths() {
-    const blogEntries = await getCollection("blog");
+    const blogEntries = await getCollection("blog", ({ data }) => !data.draft);
 
     // Sort by date descending
     const sortedEntries = [...blogEntries].sort(

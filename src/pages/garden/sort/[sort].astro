@@ -2,67 +2,49 @@
 import GardenPage from "@components/garden/GardenPage.astro";
 import { fetchNotes, getCategories, type Note } from "@api/github-notes";
 
-export async function getStaticPaths() {
-    const notesData = await fetchNotes();
-    const categories = getCategories(notesData);
+const sortParam = (Astro.params.sort as string) || "newest";
+const validSorts = ["newest", "last-edited", "alphabetical"] as const;
+const selectedSort = validSorts.includes(sortParam as any)
+    ? (sortParam as any)
+    : "newest";
 
-    // Build category info with counts, sorted by count for consistent color assignment
-    const categoryInfoList = categories
-        .map((cat) => ({
-            name: cat,
-            count: (notesData[cat] as Note[])?.length || 0,
-        }))
-        .sort((a, b) => b.count - a.count);
+const notesData = await fetchNotes();
+const allCategories = getCategories(notesData);
 
-    // Create a map of category to index based on sorted order for consistent coloring
-    const categoryIndexMap: Record<string, number> = {};
-    categoryInfoList.forEach((cat, index) => {
-        categoryIndexMap[cat.name] = index;
-    });
+const categoryInfoList = allCategories
+    .map((cat) => ({
+        name: cat,
+        count: (notesData[cat] as Note[])?.length || 0,
+    }))
+    .sort((a, b) => b.count - a.count);
 
-    // Flatten all notes from all categories
-    const allNotes: Note[] = [];
-    for (const category of categories) {
-        const categoryNotes = notesData[category] as Note[];
-        allNotes.push(...categoryNotes);
+const categoryIndexMap: Record<string, number> = {};
+categoryInfoList.forEach((cat, index) => {
+    categoryIndexMap[cat.name] = index;
+});
+
+const allNotes: Note[] = [];
+for (const cat of allCategories) {
+    const catNotes = notesData[cat] as Note[];
+    if (Array.isArray(catNotes)) {
+        allNotes.push(...catNotes);
     }
-
-    // Generate paths for all sort options
-    const sortOptions = ["newest", "last-edited", "alphabetical"] as const;
-
-    return sortOptions.map((sort) => {
-        // Sort notes based on the sort option
-        const sortedNotes = [...allNotes].sort((a, b) => {
-            if (sort === "newest") {
-                return (
-                    new Date(b.created).getTime() -
-                    new Date(a.created).getTime()
-                );
-            }
-            if (sort === "alphabetical") {
-                return a.title.localeCompare(b.title);
-            }
-            return new Date(b.edited).getTime() - new Date(a.edited).getTime();
-        });
-
-        return {
-            params: { sort },
-            props: {
-                notes: sortedNotes,
-                allCategories: categoryInfoList,
-                categoryIndexMap,
-                selectedSort: sort,
-            },
-        };
-    });
 }
 
-const { notes, allCategories, categoryIndexMap, selectedSort } = Astro.props;
+const sortedNotes = [...allNotes].sort((a, b) => {
+    if (selectedSort === "newest") {
+        return new Date(b.created).getTime() - new Date(a.created).getTime();
+    }
+    if (selectedSort === "alphabetical") {
+        return a.title.localeCompare(b.title);
+    }
+    return new Date(b.edited).getTime() - new Date(a.edited).getTime();
+});
 ---
 
 <GardenPage
-    notes={notes}
-    allCategories={allCategories}
+    notes={sortedNotes}
+    allCategories={categoryInfoList}
     categoryIndexMap={categoryIndexMap}
     selectedSort={selectedSort}
 />

@@ -1,228 +1,273 @@
 ---
+import GardenPage from "@components/garden/GardenPage.astro";
 import Layout from "@layouts/Layout.astro";
 import { Icon } from "astro-icon/components";
-import { fetchNotes, getCategories, type Note } from "@api/github-notes";
+import {
+    fetchNotes,
+    getCategories,
+    type Note,
+} from "@api/github-notes";
 import { colors } from "@components/garden/utils/colors";
 import { marked } from "marked";
 import Divider from "@components/Divider.astro";
 
-export async function getStaticPaths() {
-    const notesData = await fetchNotes();
-    const categories = getCategories(notesData);
+const SORT_OPTIONS = ["newest", "last-edited", "alphabetical"] as const;
+type SortOption = (typeof SORT_OPTIONS)[number];
 
-    // Build category info sorted by count for consistent color assignment
-    const categoryInfoList = categories
-        .map((cat) => ({
-            name: cat,
-            count: (notesData[cat] as Note[])?.length || 0,
-        }))
-        .sort((a, b) => b.count - a.count);
+const { category: categoryParam, params } = Astro.params;
+const secondParam = Array.isArray(params) ? params[0] : (params || "");
 
-    // Create category to index map
-    const categoryIndexMap: Record<string, number> = {};
-    categoryInfoList.forEach((cat, index) => {
-        categoryIndexMap[cat.name] = index;
+const isSortRoute = SORT_OPTIONS.includes(secondParam as SortOption);
+
+const notesData = await fetchNotes();
+const allCategories = getCategories(notesData);
+
+const categoryInfoList = allCategories
+    .map((cat) => ({
+        name: cat,
+        count: (notesData[cat] as Note[])?.length || 0,
+    }))
+    .sort((a, b) => b.count - a.count);
+
+const categoryIndexMap: Record<string, number> = {};
+categoryInfoList.forEach((cat, index) => {
+    categoryIndexMap[cat.name] = index;
+});
+
+function findMatchingCategory(
+    param: string | undefined,
+    categories: string[],
+): string | undefined {
+    if (!param) return undefined;
+    const p = param.normalize("NFC").toLowerCase();
+    const exact = categories.find(
+        (c) => c.normalize("NFC").toLowerCase() === p,
+    );
+    if (exact) return exact;
+    return categories.find((c) => {
+        const cl = c.normalize("NFC").toLowerCase();
+        return cl.includes(p) || p.includes(cl);
     });
-
-    const paths: {
-        params: { category: string; slug: string };
-        props: {
-            note: Note;
-            htmlContent: string;
-            categoryIndex: number;
-            previousNote: Note | null;
-            nextNote: Note | null;
-            footnotes: { id: string; content: string }[];
-        };
-    }[] = [];
-
-    for (const category of categories) {
-        const notes = notesData[category] as Note[];
-        // Sort notes by created date for consistent ordering
-        const sortedNotes = [...notes].sort(
-            (a, b) =>
-                new Date(b.created).getTime() - new Date(a.created).getTime(),
-        );
-
-        for (let i = 0; i < sortedNotes.length; i++) {
-            const note = sortedNotes[i];
-
-            // Extract footnotes from content
-            const footnoteRegex = /\[\^(\d+)\]:\s(.+)/g;
-            const footnotes: { id: string; content: string }[] = [];
-            let contentWithoutFootnotes = (note.content || "").replace(
-                footnoteRegex,
-                (_match: string, id: string, content: string) => {
-                    footnotes.push({ id, content });
-                    return "";
-                },
-            );
-
-            // Remove indentation from HTML blocks to prevent them from being treated as code blocks
-            // This handles both <div> and other HTML elements that might be indented in Obsidian notes
-            contentWithoutFootnotes = contentWithoutFootnotes.replace(
-                /^[ \t]+(<[^>]+>)/gm,
-                "$1",
-            );
-
-            // Configure marked to handle HTML properly
-            marked.setOptions({
-                gfm: true, // GitHub Flavored Markdown
-                breaks: false, // Don't convert \n to <br>
-            });
-
-            // Parse markdown content to HTML
-            const htmlContent = await marked.parse(contentWithoutFootnotes);
-
-            // Find previous and next notes
-            const previousNote = i > 0 ? sortedNotes[i - 1] : null;
-            const nextNote =
-                i < sortedNotes.length - 1 ? sortedNotes[i + 1] : null;
-
-            paths.push({
-                params: {
-                    category: category.toLowerCase(),
-                    slug: note.slug,
-                },
-                props: {
-                    note,
-                    htmlContent,
-                    categoryIndex: categoryIndexMap[category],
-                    previousNote,
-                    nextNote,
-                    footnotes,
-                },
-            });
-        }
-    }
-
-    return paths;
 }
 
-const { note, htmlContent, categoryIndex, previousNote, nextNote, footnotes } =
-    Astro.props;
+function getAllNotesFlat(
+    data: typeof notesData,
+    cats: string[],
+): { note: Note; category: string }[] {
+    const result: { note: Note; category: string }[] = [];
+    for (const cat of cats) {
+        const notes = data[cat] as Note[];
+        if (notes) {
+            for (const n of notes) {
+                result.push({ note: n, category: cat });
+            }
+        }
+    }
+    return result;
+}
 
-// Get background color based on category
-const bgColor = colors[categoryIndex % colors.length];
+let resolvedCategory: string;
+let sortNotes: Note[] = [];
+let selectedSort: SortOption = "newest";
+let note: Note | null = null;
+let noteIndex = -1;
+let previousNote: Note | null = null;
+let nextNote: Note | null = null;
 
-// Format date (DD / MM / YYYY)
-const formatDate = (dateString: string) => {
-    const date = new Date(dateString);
-    const day = String(date.getDate()).padStart(2, "0");
-    const month = String(date.getMonth() + 1).padStart(2, "0");
-    const year = date.getFullYear();
-    return `${day} / ${month} / ${year}`;
-};
+if (isSortRoute) {
+    selectedSort = secondParam as SortOption;
+    const matched = findMatchingCategory(categoryParam, allCategories);
+    resolvedCategory = matched || categoryParam;
+    const rawNotes = ((notesData[resolvedCategory] as Note[]) || []).sort(
+        (a, b) => {
+            if (selectedSort === "newest") {
+                return (
+                    new Date(b.created).getTime() -
+                    new Date(a.created).getTime()
+                );
+            }
+            if (selectedSort === "alphabetical") {
+                return a.title.localeCompare(b.title);
+            }
+            return (
+                new Date(b.edited).getTime() - new Date(a.edited).getTime()
+            );
+        },
+    );
+    sortNotes = rawNotes;
+} else {
+    const allFlat = getAllNotesFlat(notesData, allCategories);
+    const found = allFlat.find((item) => item.note.slug === secondParam);
+    if (!found) {
+        return Astro.redirect("/garden");
+    }
+    note = found.note;
+    resolvedCategory = found.category;
 
-// Only show edited if it exists and differs from created
-const showEdited =
-    note.edited && formatDate(note.created) !== formatDate(note.edited);
+    const categoryNotes = (notesData[resolvedCategory] as Note[]) || [];
+    const sortedAllNotes = [...categoryNotes].sort(
+        (a, b) =>
+            new Date(b.created).getTime() - new Date(a.created).getTime(),
+    );
+    noteIndex = sortedAllNotes.findIndex((n) => n.slug === note!.slug);
+    previousNote = noteIndex > 0 ? sortedAllNotes[noteIndex - 1] : null;
+    nextNote =
+        noteIndex < sortedAllNotes.length - 1
+            ? sortedAllNotes[noteIndex + 1]
+            : null;
+}
+
+let htmlContent = "";
+let footnotes: { id: string; content: string }[] = [];
+let bgColor = "";
+let showEdited = false;
+let createdFormatted = "";
+let editedFormatted = "";
+
+if (note) {
+    const footnoteRegex = /\[\^(\d+)\]:\s(.+)/g;
+    let contentWithoutFootnotes = (note.content || "").replace(
+        footnoteRegex,
+        (_match: string, id: string, content: string) => {
+            footnotes.push({ id, content });
+            return "";
+        },
+    );
+
+    contentWithoutFootnotes = contentWithoutFootnotes.replace(
+        /^[ \t]+(<[^>]+>)/gm,
+        "$1",
+    );
+
+    marked.setOptions({ gfm: true, breaks: false });
+    htmlContent = await marked.parse(contentWithoutFootnotes);
+
+    bgColor = colors[(categoryIndexMap[resolvedCategory] ?? 0) % colors.length];
+
+    const formatDate = (dateString: string) => {
+        const date = new Date(dateString);
+        const day = String(date.getDate()).padStart(2, "0");
+        const month = String(date.getMonth() + 1).padStart(2, "0");
+        const year = date.getFullYear();
+        return `${day} / ${month} / ${year}`;
+    };
+
+    createdFormatted = formatDate(note.created);
+    editedFormatted = note.edited ? formatDate(note.edited) : "";
+    showEdited =
+        !!note.edited && createdFormatted !== editedFormatted;
+}
 ---
 
-<Layout hasHeader={false} ogImage="/opengraph/garden.jpg">
-    <!-- SVG distortion filter -->
-    <svg class="hidden" aria-hidden="true">
-        <defs>
-            <filter id="distort-xl">
-                <feTurbulence baseFrequency="1 1" numOctaves="1"></feTurbulence>
-                <feDisplacementMap in="SourceGraphic" scale="1.3"
-                ></feDisplacementMap>
-            </filter>
-        </defs>
-    </svg>
+{isSortRoute ? (
+    <GardenPage
+        notes={sortNotes}
+        allCategories={categoryInfoList}
+        categoryIndexMap={categoryIndexMap}
+        selectedCategory={resolvedCategory}
+        selectedSort={selectedSort}
+    />
+) : (
+    <Layout hasHeader={false} ogImage="/opengraph/garden.jpg">
+        <svg class="hidden" aria-hidden="true">
+            <defs>
+                <filter id="distort-xl">
+                    <feTurbulence baseFrequency="1 1" numOctaves="1"></feTurbulence>
+                    <feDisplacementMap in="SourceGraphic" scale="1.3"
+                    ></feDisplacementMap>
+                </filter>
+            </defs>
+        </svg>
 
-    <a
-        href="/garden"
-        transition:name="garden-close-button"
-        class="close-button fixed top-4 right-4 z-50 rounded-full h-12 w-12 flex-center cursor-pointer transition-colors no-underline"
-    >
-        <Icon name="ph:x-bold" size={24} />
-    </a>
-    <article
-        transition:name="garden-card"
-        class="effect relative w-full max-w-5xl lg:my-12 z-30 mx-auto"
-        data-prev-note={previousNote
-            ? `/garden/${note.thema.toLowerCase()}/${previousNote.slug}`
-            : undefined}
-        data-next-note={nextNote
-            ? `/garden/${note.thema.toLowerCase()}/${nextNote.slug}`
-            : undefined}
-    >
-        <!-- Main card with background color -->
-        <div
-            class="relative w-full p-2 md:p-4 text-black"
-            style={`background-color: ${bgColor}`}
+        <a
+            href="/garden"
+            transition:name="garden-close-button"
+            class="close-button fixed top-4 right-4 z-50 rounded-full h-12 w-12 flex-center cursor-pointer transition-colors no-underline"
         >
-            <div class="texture"></div>
-
-            <!-- Content border -->
+            <Icon name="ph:x-bold" size={24} />
+        </a>
+        <article
+            transition:name="garden-card"
+            class="effect relative w-full max-w-5xl lg:my-12 z-30 mx-auto"
+            data-prev-note={
+                previousNote
+                    ? `/garden/${note!.thema.toLowerCase()}/${previousNote.slug}`
+                    : undefined
+            }
+            data-next-note={
+                nextNote
+                    ? `/garden/${note!.thema.toLowerCase()}/${nextNote.slug}`
+                    : undefined
+            }
+        >
             <div
-                class="border border-black/60 px-4 pb-24 pt-4 md:px-10 md:pt-6"
+                class="relative w-full p-2 md:p-4 text-black"
+                style={`background-color: ${bgColor}`}
             >
-                <div class="mx-auto mt-20 max-w-[65ch] text-[1.2rem]">
-                    <h1
-                        class="font-sans text-[3rem] font-black leading-[1.15] md:text-[4.5rem]"
-                    >
-                        {note.title}
-                    </h1>
-                    <Divider isBlack />
-                </div>
+                <div class="texture"></div>
 
-                <!-- Markdown content -->
-                <div class="markdown prose">
-                    <Fragment set:html={htmlContent} />
-                </div>
-            </div>
-
-            <!-- Metadata footer -->
-            <div class="border-b border-l border-r border-black/60">
-                <div class="flex">
-                    <span
-                        class:list={[
-                            "flex flex-col items-center gap-2 border-r border-black/60 p-3 md:flex-row",
-                            showEdited ? "w-1/3" : "w-1/2",
-                        ]}
-                    >
-                        <span>创建于:</span>
-                        <span
-                            class="font-decorative text-[20px] sm:text-[24px]"
-                            style="filter: url(#distort-xl);"
+                <div
+                    class="border border-black/60 px-4 pb-24 pt-4 md:px-10 md:pt-6"
+                >
+                    <div class="mx-auto mt-20 max-w-[65ch] text-[1.2rem]">
+                        <h1
+                            class="font-sans text-[3rem] font-black leading-[1.15] md:text-[4.5rem]"
                         >
-                            {formatDate(note.created)}
+                            {note!.title}
+                        </h1>
+                        <Divider isBlack />
+                    </div>
+
+                    <div class="markdown prose">
+                        <Fragment set:html={htmlContent} />
+                    </div>
+                </div>
+
+                <div class="border-b border-l border-r border-black/60">
+                    <div class="flex">
+                        <span
+                            class:list={[
+                                "flex flex-col items-center gap-2 border-r border-black/60 p-3 md:flex-row",
+                                showEdited ? "w-1/3" : "w-1/2",
+                            ]}
+                        >
+                            <span>Created:</span>
+                            <span
+                                class="font-decorative text-[20px] sm:text-[24px]"
+                                style="filter: url(#distort-xl);"
+                            >
+                                {createdFormatted}
+                            </span>
                         </span>
-                    </span>
-                    {
-                        showEdited && (
+                        {showEdited && (
                             <span class="flex w-1/3 flex-col items-center gap-2 border-r border-black/60 p-3 md:flex-row">
-                                <span>编辑于:</span>
+                                <span>Edited:</span>
                                 <span
                                     class="font-decorative text-[20px] sm:text-[24px]"
                                     style="filter: url(#distort-xl);"
                                 >
-                                    {formatDate(note.edited)}
+                                    {editedFormatted}
                                 </span>
                             </span>
-                        )
-                    }
-                    <div
-                        class:list={[
-                            "flex flex-col items-center gap-2 p-3 md:flex-row",
-                            showEdited ? "w-1/3" : "w-1/2",
-                        ]}
-                    >
-                        <span>主题:</span>
-                        <span
-                            class="font-decorative text-[20px] sm:text-[24px]"
-                            style="filter: url(#distort-xl);"
+                        )}
+                        <div
+                            class:list={[
+                                "flex flex-col items-center gap-2 p-3 md:flex-row",
+                                showEdited ? "w-1/3" : "w-1/2",
+                            ]}
                         >
-                            {note.thema}
-                        </span>
+                            <span>Topic:</span>
+                            <span
+                                class="font-decorative text-[20px] sm:text-[24px]"
+                                style="filter: url(#distort-xl);"
+                            >
+                                {note!.thema}
+                            </span>
+                        </div>
                     </div>
-                </div>
-                {
-                    footnotes.length > 0 && (
+                    {footnotes.length > 0 && (
                         <div class="flex flex-col border-t border-black/60 px-3 py-6 md:flex-row">
-                            <div class="mb-2 w-1/3">脚注:</div>
+                            <div class="mb-2 w-1/3">Footnotes:</div>
                             <ul class="text-xs md:w-2/3">
                                 {footnotes.map((fn) => (
                                     <li
@@ -237,14 +282,12 @@ const showEdited =
                                 ))}
                             </ul>
                         </div>
-                    )
-                }
-                {
-                    (previousNote || nextNote) && (
+                    )}
+                    {(previousNote || nextNote) && (
                         <div class="flex border-t border-black/60">
                             {previousNote && (
                                 <a
-                                    href={`/garden/${note.thema.toLowerCase()}/${previousNote.slug}`}
+                                    href={`/garden/${note!.thema.toLowerCase()}/${previousNote.slug}`}
                                     data-astro-reload
                                     class={`${nextNote ? "w-1/2 border-r border-black/60" : "w-full"} cursor-pointer px-3 py-9 text-center hover:bg-black/5 transition-colors`}
                                 >
@@ -253,7 +296,7 @@ const showEdited =
                             )}
                             {nextNote && (
                                 <a
-                                    href={`/garden/${note.thema.toLowerCase()}/${nextNote.slug}`}
+                                    href={`/garden/${note!.thema.toLowerCase()}/${nextNote.slug}`}
                                     data-astro-reload
                                     class={`${previousNote ? "w-1/2" : "w-full"} cursor-pointer px-3 py-9 text-center hover:bg-black/5 transition-colors`}
                                 >
@@ -261,12 +304,12 @@ const showEdited =
                                 </a>
                             )}
                         </div>
-                    )
-                }
+                    )}
+                </div>
             </div>
-        </div>
-    </article>
-</Layout>
+        </article>
+    </Layout>
+)}
 
 <style>
     .texture {
@@ -296,7 +339,6 @@ const showEdited =
         right: 0.5em;
     }
 
-    /* Markdown prose styling */
     .markdown {
         --tw-prose-body: rgba(0, 0, 0, 0.9);
         --tw-prose-headings: rgba(0, 0, 0, 0.9);
@@ -345,7 +387,6 @@ const showEdited =
         mix-blend-mode: normal;
     }
 
-    /* Hide images in paragraphs by default */
     .markdown :global(p) :global(img) {
         width: 100%;
         min-width: 0;
@@ -353,7 +394,6 @@ const showEdited =
         display: none;
     }
 
-    /* Image gallery - flex row layout for paragraphs with only images */
     .markdown :global(.image-gallery) {
         display: flex;
         gap: 16px;
@@ -432,7 +472,6 @@ const showEdited =
         display: none;
     }
 
-    /* Columns layout for side-by-side content */
     .markdown :global(.columns) {
         display: grid;
         grid-template-columns: 1fr;
@@ -482,14 +521,10 @@ const showEdited =
         });
     }
 
-    // Run on initial load
     document.addEventListener("DOMContentLoaded", initImageGallery);
-    // Run after View Transitions
     document.addEventListener("astro:page-load", initImageGallery);
 
-    // Keyboard navigation for prev/next notes
     function handleKeyboardNavigation(e: KeyboardEvent) {
-        // Don't trigger if user is typing in an input
         if (
             e.target instanceof HTMLInputElement ||
             e.target instanceof HTMLTextAreaElement
@@ -514,7 +549,6 @@ const showEdited =
 
     document.addEventListener("keydown", handleKeyboardNavigation);
 
-    // Calculate precise slide distance based on element position
     document.addEventListener("astro:before-preparation", (e) => {
         const isNavigatingToGarden =
             e.newDocument?.URL.includes("/garden") &&
@@ -526,10 +560,6 @@ const showEdited =
             );
             if (article) {
                 const rect = article.getBoundingClientRect();
-                // Calculate distance to slide element's top edge below viewport bottom
-                // rect.top can be negative if element is scrolled above viewport
-                // window.innerHeight is the viewport height (bottom edge position)
-                // Translation needed: viewport bottom - current top position
                 const slideDistance = window.innerHeight - rect.top;
 
                 document.documentElement.style.setProperty(

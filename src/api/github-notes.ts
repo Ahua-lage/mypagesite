@@ -14,30 +14,51 @@ export interface NotesData {
     [category: string]: Note[] | string | number;
 }
 
-export async function fetchNotes(): Promise<NotesData> {
-    try {
-        const response = await fetch(
-            "https://raw.githubusercontent.com/your-github-username/your-data-repo/main/output/digital-garden.json",
-            {
-                headers: {
-                    Authorization: `token ${import.meta.env.GITHUB_TOKEN}`,
-                    Accept: "application/vnd.github.v3.raw",
-                },
-            }
-        );
+const GARDEN_DATA_URL =
+    "https://raw.githubusercontent.com/Ahua-lage/preson-obsidian/main/output/digital-garden.json";
 
-        if (!response.ok) {
-            throw new Error(`Failed to fetch notes: ${response.statusText}`);
+function getAuthToken(): string {
+    const token = import.meta.env.GITHUB_TOKEN;
+    if (!token) {
+        throw new Error(
+            "GITHUB_TOKEN environment variable is not set. Please add it to your .env file.",
+        );
+    }
+    return token.trim();
+}
+
+function getAuthHeader(token: string): { Authorization: string } {
+    if (token.startsWith("github_pat_")) {
+        return { Authorization: `Bearer ${token}` };
+    }
+    return { Authorization: `token ${token}` };
+}
+
+export async function fetchNotes(): Promise<NotesData> {
+    const token = getAuthToken();
+    const response = await fetch(GARDEN_DATA_URL, {
+        headers: {
+            ...getAuthHeader(token),
+            Accept: "application/vnd.github.v3.raw",
+        },
+    });
+
+    if (!response.ok) {
+        let detail = response.statusText;
+        if (response.status === 404) {
+            detail =
+                "Not Found - The file 'output/digital-garden.json' does not exist in the repository, or your token lacks access to this repository.";
+        } else if (response.status === 401 || response.status === 403) {
+            detail =
+                "Authentication failed - Check that your GITHUB_TOKEN is valid and has 'repo' permission for this repository.";
         }
 
-        return response.json();
-    } catch (error) {
-        console.warn("Failed to fetch notes, returning empty data:", error);
-        return {
-            lastUpdated: new Date().toISOString(),
-            count: 0
-        };
+        throw new Error(
+            `Failed to fetch notes (${response.status}): ${detail}`,
+        );
     }
+
+    return response.json();
 }
 
 export function getAllNotes(data: NotesData): Note[] {
@@ -56,6 +77,6 @@ export function getAllNotes(data: NotesData): Note[] {
 export function getCategories(data: NotesData): string[] {
     const excludedKeys = ["lastUpdated", "count"];
     return Object.keys(data).filter(
-        (key) => !excludedKeys.includes(key) && Array.isArray(data[key])
+        (key) => !excludedKeys.includes(key) && Array.isArray(data[key]),
     );
 }

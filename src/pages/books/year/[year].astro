@@ -2,6 +2,8 @@
 import BooksPage from "@components/books/BooksPage.astro";
 import { fetchBooks } from "@api/github-books";
 
+export const prerender = true;
+
 export async function getStaticPaths() {
     const booksData = await fetchBooks();
 

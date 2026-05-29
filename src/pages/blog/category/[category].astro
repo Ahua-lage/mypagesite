@@ -3,7 +3,7 @@ import { getCollection } from "astro:content";
 import BlogPage from "@components/blog/BlogPage.astro";
 
 export async function getStaticPaths() {
-    const blogPosts = await getCollection("blog");
+    const blogPosts = await getCollection("blog", ({ data }) => !data.draft);
     const categories = [...new Set(blogPosts.map((post) => post.data.category))];
 
     return categories.map((category) => ({
@@ -13,7 +13,7 @@ export async function getStaticPaths() {
 }
 
 const { category } = Astro.params;
-const allBlogPosts = await getCollection("blog");
+const allBlogPosts = await getCollection("blog", ({ data }) => !data.draft);
 const filteredPosts = allBlogPosts.filter(
     (post) => post.data.category === category
 );

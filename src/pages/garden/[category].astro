@@ -2,51 +2,52 @@
 import GardenPage from "@components/garden/GardenPage.astro";
 import { fetchNotes, getCategories, type Note } from "@api/github-notes";
 
-export async function getStaticPaths() {
-    const notesData = await fetchNotes();
-    const categories = getCategories(notesData);
+const categoryParam = Astro.params.category;
 
-    // Build category info with counts, sorted by count for consistent color assignment
-    const categoryInfoList = categories
-        .map((cat) => ({
-            name: cat,
-            count: (notesData[cat] as Note[])?.length || 0,
-        }))
-        .sort((a, b) => b.count - a.count);
+const notesData = await fetchNotes();
+const allCategories = getCategories(notesData);
 
-    // Create a map of category to index based on sorted order for consistent coloring
-    const categoryIndexMap: Record<string, number> = {};
-    categoryInfoList.forEach((cat, index) => {
-        categoryIndexMap[cat.name] = index;
-    });
+const categoryInfoList = allCategories
+    .map((cat) => ({
+        name: cat,
+        count: (notesData[cat] as Note[])?.length || 0,
+    }))
+    .sort((a, b) => b.count - a.count);
 
-    return categories.map((category) => {
-        const categoryNotes = (notesData[category] as Note[]) || [];
-        // Sort notes by created date (most recent first)
-        const sortedNotes = [...categoryNotes].sort(
-            (a, b) =>
-                new Date(b.created).getTime() - new Date(a.created).getTime(),
-        );
+const categoryIndexMap: Record<string, number> = {};
+categoryInfoList.forEach((cat, index) => {
+    categoryIndexMap[cat.name] = index;
+});
 
-        return {
-            params: { category: category.toLowerCase() },
-            props: {
-                category,
-                notes: sortedNotes,
-                allCategories: categoryInfoList,
-                categoryIndexMap,
-            },
-        };
+function findMatchingCategory(
+    param: string | undefined,
+    categories: string[],
+): string | undefined {
+    if (!param) return undefined;
+    const p = param.normalize("NFC").toLowerCase();
+    const exact = categories.find(
+        (c) => c.normalize("NFC").toLowerCase() === p,
+    );
+    if (exact) return exact;
+    return categories.find((c) => {
+        const cl = c.normalize("NFC").toLowerCase();
+        return cl.includes(p) || p.includes(cl);
     });
 }
 
-const { category, notes, allCategories, categoryIndexMap } = Astro.props;
+const resolvedCategory =
+    findMatchingCategory(categoryParam, allCategories) || categoryParam;
+
+const categoryNotes = ((notesData[resolvedCategory] as Note[]) || []).sort(
+    (a, b) =>
+        new Date(b.created).getTime() - new Date(a.created).getTime(),
+);
 ---
 
 <GardenPage
-    notes={notes}
-    allCategories={allCategories}
+    notes={categoryNotes}
+    allCategories={categoryInfoList}
     categoryIndexMap={categoryIndexMap}
-    selectedCategory={category}
+    selectedCategory={resolvedCategory}
     selectedSort="newest"
 />

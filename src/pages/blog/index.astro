@@ -2,7 +2,7 @@
 import { getCollection } from "astro:content";
 import BlogPage from "@components/blog/BlogPage.astro";
 
-const allBlogPosts = await getCollection("blog");
+const allBlogPosts = await getCollection("blog", ({ data }) => !data.draft);
 ---
 
 <BlogPage posts={allBlogPosts} allPosts={allBlogPosts} />

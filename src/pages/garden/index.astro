@@ -32,8 +32,10 @@ categoryInfoList.forEach((cat, index) => {
 const allNotes: Note[] = [];
 if (notesData) {
     for (const category of categories) {
-        const categoryNotes = notesData[category] as Note[];
-        allNotes.push(...categoryNotes);
+        const categoryNotes = (notesData[category] as Note[]) || [];
+        if (Array.isArray(categoryNotes)) {
+            allNotes.push(...categoryNotes);
+        }
     }
 }
 
@@ -44,7 +46,7 @@ allNotes.sort(
 ---
 
 <GardenPage
-    notes={allNotes}
+    notes={allNotes ?? []}
     allCategories={categoryInfoList}
     categoryIndexMap={categoryIndexMap}
     selectedSort="newest"

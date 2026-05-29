@@ -4,6 +4,7 @@ subtitle: "可选副标题"
 description: "给搜索引擎和分享卡片看的简短摘要。"
 date: 2026-05-27
 category: "微信公众号"
+draft: true
 wechatUrl: "https://mp.weixin.qq.com/s/your-article-id"
 wechatStats:
     reads: "1.2万"
